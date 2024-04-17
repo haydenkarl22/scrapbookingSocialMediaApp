@@ -1,0 +1,29 @@
+.topbar {
+    display: flex;           /* Enables flexbox layout */
+    justify-content: center; /* Horizontally centers the content in the topbar */
+    align-items: center;     /* Vertically centers the content (if needed) */
+    width: 100%;             /* Ensures the topbar spans the full width */
+}
+
+.topList {
+    list-style: none;        /* Removes the default list styling */
+    display: flex;           /* Maintains inline (horizontal) layout for list items */
+    padding: 0;              /* Removes the default padding */
+    margin: 0;               /* Removes the default margin */
+    align-items: center;     /* Align items in a line */
+}
+
+.topListItem {
+    margin: 0 10px;          /* Adds horizontal spacing between list items, adjust as needed */
+}
+
+.link {
+    font-size: 16px;         /* Sets the font size to 16px */
+    font-weight: bold;       /* Makes the text bold */
+    text-decoration: none;   /* Removes underline from links */
+    color: black;            /* Sets text color, adjust as necessary */
+}
+
+.link:hover {
+    text-decoration: underline; /* Adds underline on hover for better UX */
+}
