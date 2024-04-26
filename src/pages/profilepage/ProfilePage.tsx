@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebase-config';  // Ensure this path is correct
+import './profilepage.css';
+
 
 const ProfilePage: React.FC = () => {
     // State for sign-up form
@@ -67,26 +69,30 @@ const ProfilePage: React.FC = () => {
                             value={username}
                             onChange={e => setUsername(e.target.value)}
                             placeholder="Username"
+                            className='userfieldSU'
                         />
                         <input
                             type="email"
                             value={signUpEmail}
                             onChange={e => setSignUpEmail(e.target.value)}
                             placeholder="Email"
+                            className='emailfieldSU'
                         />
                         <input
                             type="password"
                             value={signUpPassword}
                             onChange={e => setSignUpPassword(e.target.value)}
                             placeholder="Password"
+                            className='pwfieldSU'
                         />
                         <input
                             type="password"
                             value={confirmPassword}
                             onChange={e => setConfirmPassword(e.target.value)}
                             placeholder="Confirm Password"
+                            className='confirmSU'
                         />
-                        <button type="submit">Sign Up</button>
+                        <button type="submit" className='signupbutton'>Sign Up</button>
                     </form>
                     <h1>Sign In</h1>
                     <form onSubmit={(e) => { e.preventDefault(); handleSignIn(); }}>
@@ -95,14 +101,16 @@ const ProfilePage: React.FC = () => {
                             value={signInEmail}
                             onChange={e => setSignInEmail(e.target.value)}
                             placeholder="Email"
+                            className='emailfieldSI'
                         />
                         <input
                             type="password"
                             value={signInPassword}
                             onChange={e => setSignInPassword(e.target.value)}
                             placeholder="Password"
+                            className='pwfieldSI'
                         />
-                        <button type="submit">Sign In</button>
+                        <button type="submit" className='signinbutton'>Sign In</button>
                     </form>
                 </div>
             </div>

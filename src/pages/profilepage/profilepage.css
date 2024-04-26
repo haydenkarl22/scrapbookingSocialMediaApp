@@ -1,0 +1,131 @@
+.userfieldSU {
+    font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+    font-weight: bolder;
+    color: black;
+    background-color: white;
+    width: 65%;
+    height: 100%;
+    padding: 10px;
+    border-color: black;
+    border-radius: 20px; /* Adjust to make the input rounded */
+    outline: none;
+    box-sizing: border-box;
+    text-align: left;
+    font-size: 24px;
+    box-shadow: 10px 10px 0px black;
+    margin-bottom: 15px;
+}
+
+.emailfieldSU {
+    font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+    font-weight: bolder;
+    color: black;
+    background-color: white;
+    width: 65%;
+    height: 100%;
+    padding: 10px;
+    border-color: black;
+    border-radius: 20px; /* Adjust to make the input rounded */
+    outline: none;
+    box-sizing: border-box;
+    text-align: left;
+    font-size: 24px;
+    box-shadow: 10px 10px 0px black;
+    margin-bottom: 25px;
+}
+
+.pwfieldSU {
+    font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+    font-weight: bolder;
+    color: black;
+    background-color: white;
+    width: 65%;
+    height: 100%;
+    padding: 10px;
+    border-color: black;
+    border-radius: 20px; /* Adjust to make the input rounded */
+    outline: none;
+    box-sizing: border-box;
+    text-align: left;
+    font-size: 24px;
+    box-shadow: 10px 10px 0px black;
+    margin-bottom: 10px;
+}
+
+.confirmSU {
+    font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+    font-weight: bolder;
+    color: black;
+    background-color: white;
+    width: 65%;
+    height: 100%;
+    padding: 10px;
+    border-color: black;
+    border-radius: 20px; /* Adjust to make the input rounded */
+    outline: none;
+    box-sizing: border-box;
+    text-align: left;
+    font-size: 24px;
+    box-shadow: 10px 10px 0px black;
+    margin-bottom: 10px;
+}
+
+.signupbutton {
+    font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+    font-weight: bolder;
+    color: black;
+    margin-left: 25px;
+    width: 25%;
+    height: 100%;
+    font-size: 24px;
+    border-radius: 20px;
+    background-color: white;
+}
+
+.emailfieldSI {
+    font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+    font-weight: bolder;
+    color: black;
+    background-color: white;
+    width: 65%;
+    height: 100%;
+    padding: 10px;
+    border-color: black;
+    border-radius: 20px; /* Adjust to make the input rounded */
+    outline: none;
+    box-sizing: border-box;
+    text-align: left;
+    font-size: 24px;
+    box-shadow: 10px 10px 0px black;
+    margin-bottom: 25px;
+}
+
+.pwfieldSI {
+    font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+    font-weight: bolder;
+    color: black;
+    background-color: white;
+    width: 65%;
+    height: 100%;
+    padding: 10px;
+    border-color: black;
+    border-radius: 20px; /* Adjust to make the input rounded */
+    outline: none;
+    box-sizing: border-box;
+    text-align: left;
+    font-size: 24px;
+    box-shadow: 10px 10px 0px black;
+    margin-bottom: 10px;
+}
+
+.signinbutton {
+    font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+    font-weight: bolder;
+    color: black;
+    margin-left: 25px;
+    width: 25%;
+    height: 100%;
+    font-size: 24px;
+    border-radius: 20px;
+    background-color: white;
+}
