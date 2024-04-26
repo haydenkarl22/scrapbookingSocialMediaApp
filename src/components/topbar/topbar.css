@@ -18,7 +18,8 @@
 }
 
 .link {
-    font-size: 16px;         /* Sets the font size to 16px */
+    font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+    font-size: 24px;         /* Sets the font size to 16px */
     font-weight: bold;       /* Makes the text bold */
     text-decoration: none;   /* Removes underline from links */
     color: black;            /* Sets text color, adjust as necessary */
