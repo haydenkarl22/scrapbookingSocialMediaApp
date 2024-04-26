@@ -62,7 +62,7 @@ const ProfilePage: React.FC = () => {
             </div>
             <div className='subDiv'>
                 <div className='sub'>
-                    <h1>Sign Up</h1>
+                    <h1 className='signuptext'> Sign Up</h1>
                     <form onSubmit={(e) => { e.preventDefault(); handleSignUp(); }}>
                         <input
                             type="text"
@@ -94,7 +94,7 @@ const ProfilePage: React.FC = () => {
                         />
                         <button type="submit" className='signupbutton'>Sign Up</button>
                     </form>
-                    <h1>Sign In</h1>
+                    <h1 className='signintext'>Sign In</h1>
                     <form onSubmit={(e) => { e.preventDefault(); handleSignIn(); }}>
                         <input
                             type="email"
