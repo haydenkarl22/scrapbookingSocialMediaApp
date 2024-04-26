@@ -10,8 +10,8 @@ const App: React.FC = () => {
   return (
     <Router>
       <Topbar />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
+      <Routes>  // Use Routes to wrap all Route components
+        <Route path="/" element={<HomePage />} />  // Use element prop to render components
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/scrapbook" element={<ScrapbookPage />} />
         <Route path="/friends" element={<FriendsListPage />} />
