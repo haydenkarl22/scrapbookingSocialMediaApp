@@ -145,3 +145,54 @@
     border-radius: 20px;
     background-color: white;
 }
+
+.signoutbutton {
+    position: absolute;
+    top: 10px; /* Adjust based on your layout - make sure it's just below the button bar */
+    right: 20px; /* Align to the far right */
+    padding: 10px 20px;
+    z-index: 1000;
+    background-color: black; /* Button color */
+    color: rgb(182, 182, 182); /* Text color */
+    font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+    font-size: 200%; /* Adjust size as needed */
+    border: none; /* Matches other buttons */
+    cursor: pointer;
+    border-radius: 5px; /* Optional: if you want rounded corners */
+}
+
+.signoutbutton:hover {
+    color: rgb(231, 150, 185); /* Hover effect like other buttons */
+}
+
+.deleteAccountButton {
+    position: absolute;
+    left: 20px;  /* Position on the opposite side of the sign out button */
+    top: 10px;
+    width: 24px; /* Set the width of the button */
+    height: 24px; /* Set the height of the button */
+    padding: 0; /* Remove any padding that might increase the size */
+    background-color: transparent; /* Button background color */
+    border: none; /* No border */
+    cursor: pointer; /* Cursor on hover */
+    display: flex; /* Use flex to center the image */
+    align-items: center; /* Center content vertically */
+    justify-content: center; /* Center content horizontally */
+}
+
+.deleteAccountButton img {
+    width: 100%; /* Make the image fill the button */
+    height: auto; /* Keep the aspect ratio of the image */
+}
+
+.profile-info {
+    font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+    font-size: 24px;
+    color: black;
+    background-color: white;
+    padding: 10px;
+    border-radius: 20px;
+    box-shadow: 10px 10px 0px black;
+    margin: 10px 0;
+    width: 65%;
+}
