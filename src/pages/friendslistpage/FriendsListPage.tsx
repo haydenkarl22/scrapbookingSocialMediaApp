@@ -8,6 +8,11 @@ import io from 'socket.io-client';
 
 const socket = io('http://localhost:3000');
 
+interface MessageData {
+    message: string;
+    from: string;
+}
+
 const FriendsListPage: React.FC = () => {
     const [userId, setUserId] = useState<string | null>(null);
     const [friendId, setFriendId] = useState<string>(''); 
@@ -23,16 +28,16 @@ const FriendsListPage: React.FC = () => {
             if (uid) {
                 setUserId(uid);
                 fetchFriends(uid).then(setFriends);
-                fetchFriendRequests(uid).then(setFriendRequests); // Fetch friend requests
+                fetchFriendRequests(uid).then(setFriendRequests);
             } else {
                 setUserId(null);
                 setFriends([]);
-                setFriendRequests([]); // Clear friend requests if not logged in
+                setFriendRequests([]);
             }
         });
     
-        socket.on('receiveMessage', (message: string) => {
-            setMessages(prev => [...prev, message]);
+        socket.on('receiveMessage', ({ message, from }: MessageData) => {
+            setMessages(prev => [...prev, `${from}: ${message}`]);
         });
     
         return () => {
@@ -74,9 +79,9 @@ const FriendsListPage: React.FC = () => {
         }
       };
     
-    const sendMessage = (message: string): void => {
-        if (friendId) {
-            socket.emit('sendMessage', { message, to: friendId });
+      const sendMessage = (message: string): void => {
+        if (friendId && userId) {
+            socket.emit('sendMessage', { message, from: userId });
             setMessages(prev => [...prev, `You: ${message}`]);
         }
     };
@@ -137,7 +142,7 @@ const FriendsListPage: React.FC = () => {
                         {messages.map((msg, index) => <p key={index}>{msg}</p>)}
                         <input type="text" onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.value && sendMessage(e.currentTarget.value)} placeholder="Type a message..." />
                     </div>
-                    {friendId ? <WebRTCManager signaling={socket} initiateChat={initiateChat} /> : <p>Connecting...</p>}
+                    {friendId && userId ? <WebRTCManager signaling={socket} initiateChat={initiateChat} userId={userId} /> : <p>Connecting...</p>}
                 </div>
             </div>
         </>

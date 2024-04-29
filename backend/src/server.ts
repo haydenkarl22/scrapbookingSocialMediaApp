@@ -7,38 +7,45 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 interface ClientExt extends WebSocket {
-    userId?: string;  // Optional property to track user ID
+    userId?: string; // Optional property to track user ID
 }
 
-// Utility function to send a message to a specific user
-const sendMessageToUser = (userId: string, message: string) => {
-    wss.clients.forEach((client: ClientExt) => {
-        if (client.userId === userId && client.readyState === WebSocket.OPEN) {
-            client.send(message);
-        }
-    });
-};
+interface MessageData {
+    type: 'sendMessage';
+    text: string;
+    from: string;
+}
 
 wss.on('connection', (ws: ClientExt) => {
     console.log('Client connected');
 
     ws.on('message', (data: string) => {
-        // Try to parse the incoming data
         try {
-            const message = JSON.parse(data);
+            const message: MessageData = JSON.parse(data);
+
+            // Use a type assertion to assert that message.type is a string
+            const type = message.type as string;
 
             // Set user ID for this connection if the message type is 'setUserId'
-            if (message.type === 'setUserId') {
-                ws.userId = message.userId;
-                console.log(`User ID ${message.userId} set for a connection`);
+            if (type === 'setUserId') {
+                ws.userId = message.from;
+                console.log(`User ID ${message.from} set for a connection`);
             }
 
-            // Handle sending a message to a specific user
-            if (message.type === 'sendMessage' && message.to) {
-                console.log(`Sending message to ${message.to}`);
-                sendMessageToUser(message.to, JSON.stringify({ from: ws.userId, text: message.text }));
-            }
+            // Handle sending a message to all connected clients
+            if (type === 'sendMessage') {
+                const broadcastMessage: MessageData = {
+                    type: 'sendMessage',
+                    text: message.text,
+                    from: ws.userId || 'Unknown',
+                };
 
+                wss.clients.forEach((client: ClientExt) => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(JSON.stringify(broadcastMessage));
+                    }
+                });
+            }
         } catch (error) {
             console.error('Failed to parse message', error);
         }

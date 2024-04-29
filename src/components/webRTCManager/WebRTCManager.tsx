@@ -4,6 +4,7 @@ import { Socket } from 'socket.io-client';
 interface WebRTCManagerProps {
     signaling: Socket;
     initiateChat: boolean; // A prop to determine if this user should initiate the chat
+    userId: string; // User ID of the current user
 }
 
 interface SignalData {
@@ -13,59 +14,61 @@ interface SignalData {
     candidate?: RTCIceCandidateInit;
 }
 
-const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat }) => {
-    const peerConnection = useRef<RTCPeerConnection | null>(new RTCPeerConnection());
+const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, userId }) => {
+    const peerConnection = useRef<RTCPeerConnection | null>(null);
     const dataChannel = useRef<RTCDataChannel | null>(null);
     const [messages, setMessages] = useState<string[]>([]);
     const [inputMessage, setInputMessage] = useState('');
 
     useEffect(() => {
-        if (!peerConnection.current) {
-            return; // Exit early if peerConnection isn't initialized
-        }
-        
         const prepareConnection = () => {
-            if (!peerConnection.current) {
-                return; // Ensure peerConnection is still valid
-            }
-
-            dataChannel.current = peerConnection.current.createDataChannel("chatChannel");
-            dataChannel.current.onmessage = event => {
-                setMessages(prev => [...prev, event.data]);
-            };
-
-            peerConnection.current.onicecandidate = event => {
-                if (event.candidate) {
-                    signaling.emit('candidate', { candidate: event.candidate.toJSON() });
-                }
-            };
-
-            peerConnection.current.ondatachannel = event => {
-                dataChannel.current = event.channel;
-                dataChannel.current.onmessage = event => {
+            if (peerConnection.current) {
+                dataChannel.current = peerConnection.current.createDataChannel("chatChannel");
+                dataChannel.current.onmessage = (event) => {
                     setMessages(prev => [...prev, event.data]);
                 };
-            };
+
+                peerConnection.current.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        signaling.emit('candidate', { candidate: event.candidate.toJSON() });
+                    }
+                };
+
+                peerConnection.current.ondatachannel = (event) => {
+                    dataChannel.current = event.channel;
+                    dataChannel.current.onmessage = (event) => {
+                        setMessages(prev => [...prev, event.data]);
+                    };
+                };
+            }
         };
 
+        // Set the user ID for this connection
+        signaling.emit('setUserId', userId);
+
         if (initiateChat) {
+            peerConnection.current = new RTCPeerConnection();
             prepareConnection();
             peerConnection.current.createOffer().then(offer => {
-                if (!peerConnection.current) {
-                    return; // Ensure peerConnection is still valid
+                if (peerConnection.current && offer) {
+                    peerConnection.current.setLocalDescription(offer);
+                    signaling.emit('offer', { offer });
                 }
-                peerConnection.current.setLocalDescription(offer);
-                signaling.emit('offer', { offer });
-            }).catch(e => console.error("Error creating offer: ", e));
+            });
         }
 
         signaling.on('offer', async (data: SignalData) => {
-            if (!initiateChat && peerConnection.current && data.offer) {
+            if (!initiateChat) {
+                peerConnection.current = new RTCPeerConnection();
                 prepareConnection();
-                await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.offer));
-                const answer = await peerConnection.current.createAnswer();
-                await peerConnection.current.setLocalDescription(answer);
-                signaling.emit('answer', { answer });
+                if (peerConnection.current && data.offer) {
+                    await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.offer));
+                    const answer = await peerConnection.current.createAnswer();
+                    if (answer) {
+                        await peerConnection.current.setLocalDescription(answer);
+                        signaling.emit('answer', { answer });
+                    }
+                }
             }
         });
 
@@ -81,22 +84,29 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat }
             }
         });
 
+        // Listen for incoming messages
+        signaling.on('receiveMessage', (data: { message: string; from: string }) => {
+            setMessages(prev => [...prev, `${data.from}: ${data.message}`]);
+        });
+
         return () => {
-            if (peerConnection.current) {
-                peerConnection.current.close();
-            }
-            if (dataChannel.current) {
-                dataChannel.current.close();
-            }
+            peerConnection.current?.close();
+            dataChannel.current?.close();
             signaling.off('offer');
             signaling.off('answer');
             signaling.off('candidate');
+            signaling.off('receiveMessage');
         };
-    }, [signaling, initiateChat]);
+    }, [signaling, initiateChat, userId]);
 
     const sendMessage = () => {
         if (dataChannel.current && dataChannel.current.readyState === "open") {
             dataChannel.current.send(inputMessage);
+            setInputMessage('');
+        } else {
+            // Send the message over the Socket.IO connection
+            signaling.emit('sendMessage', { message: inputMessage, from: userId });
+            setMessages(prev => [...prev, `You: ${inputMessage}`]);
             setInputMessage('');
         }
     };
