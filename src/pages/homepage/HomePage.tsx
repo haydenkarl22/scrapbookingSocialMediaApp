@@ -22,18 +22,18 @@ const HomePage: React.FC = () => {
                 <Link to="/friends" className='friendsbutton'> Friends </Link>
                 <Link to="/" className='homebutton'> Home </Link>
                 {isUserSignedIn ? (
-                    <Link to="/profile" className='profilebutton'> Profile </Link>
+                    <Link to="/profile" className='profilebutton'> My Profile </Link>
                 ) : (
                     <Link to="/profile?mode=signin" className='profilebutton'> Sign In </Link>
                 )}
-                <Link to="/scrapbook" className='scrapbookbutton'> ScrapBook </Link>
+                <Link to="/scrapbook" className='scrapbookbutton'> Scrapbook </Link>
             </div>
             <div className='subDiv'>
                 <div className='sub'>
                     <input
                         className="scrapname"
                         type="text"
-                        placeholder="My ScrapBook"
+                        placeholder="My Scrapbook"
                     />
                 </div>
             </div>

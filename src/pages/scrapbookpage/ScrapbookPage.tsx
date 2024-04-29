@@ -1,24 +1,24 @@
 import React from 'react';
-import "./scrapbookpage.css"
+import { Link } from 'react-router-dom';
+import "./scrapbookpage.css";
 
 const ScrapbookPage: React.FC = () => {
-    return ( 
+    return (
         <>
-        <header className='nohead'> ScrapP@ges </header>
-        <div className='buttonbar'>
-            <button className='friendsbutton'> Friends </button>
-            <button className='homebutton'> Home </button>
-            <button className='profilebutton'> My Profile </button>
-            <button className='scrapbookbutton'> ScrapBook </button>
-        </div>
-        <div className='subDiv'>
-            <div className='sub'>
-                
+            <header className='nohead'>ScrapP@ges</header>
+            <div className='buttonbar'>
+                <Link to="/friends" className='friendsbutton'>Friends</Link>
+                <Link to="/" className='homebutton'>Home</Link>
+                <Link to="/profile" className='profilebutton'>My Profile</Link>
+                <Link to="/scrapbook" className='scrapbookbutton'>Scrapbook</Link>
             </div>
-        </div>
+            <div className='subDiv'>
+                <div className='sub'>
+                    {/* Content of the page */}
+                </div>
+            </div>
         </>
     );
 }
-
 
 export default ScrapbookPage;

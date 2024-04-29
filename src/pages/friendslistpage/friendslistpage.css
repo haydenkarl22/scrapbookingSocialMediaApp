@@ -1,0 +1,24 @@
+.buttonbar {
+    display: flex;          /* Enables flexbox */
+    justify-content: space-evenly; /* Distributes space evenly between and around buttons */
+    align-items: center;    /* Vertically centers the buttons in the bar */
+    height: 50px;           /* Adjust height as needed */
+    background-color: black; /* Example background color */
+    width: 100%;            /* Ensures the bar takes full width */
+}
+
+.friendsbutton,
+.homebutton,
+.profilebutton,
+.scrapbookbutton {
+    font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+    font-weight: bolder;
+    width: 25%;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 10px 20px;
+    font-size: 200%;
+    color: rgb(182, 182, 182);
+    text-decoration: none; /* Remove underline from links */
+}

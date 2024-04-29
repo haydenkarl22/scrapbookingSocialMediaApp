@@ -5,6 +5,7 @@ import { auth } from '../../firebase-config';
 import { getFirestore, doc, updateDoc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 import './profilepage.css'; // Ensure the CSS file is correctly imported
 import TrashBinIcon from '../../assets/bin.png';
+import DefaultProfilePic from '../../assets/vecteezy_default-profile-account-unknown-icon-black-silhouette_20765399.jpg';
 
 const ProfilePage: React.FC = () => {
     const db = getFirestore();
@@ -158,7 +159,7 @@ const ProfilePage: React.FC = () => {
                     <Link to="/friends" className='friendsbutton'> Friends </Link>
                     <Link to="/" className='homebutton'> Home </Link>
                     <Link to="/profile" className='profilebutton'> My Profile </Link>
-                    <Link to="/scrapbook" className='scrapbookbutton'> ScrapBook </Link>
+                    <Link to="/scrapbook" className='scrapbookbutton'> Scrapbook </Link>
                 </div>
                 {userProfile && (
                     <div style={{ position: 'relative', height: '70px' }}>
@@ -230,7 +231,7 @@ const ProfilePage: React.FC = () => {
                     <Link to="/friends" className='friendsbutton'> Friends </Link>
                     <Link to="/" className='homebutton'> Home </Link>
                     <Link to="/profile" className='profilebutton'> My Profile </Link>
-                    <Link to="/scrapbook" className='scrapbookbutton'> ScrapBook </Link>
+                    <Link to="/scrapbook" className='scrapbookbutton'> Scrapbook </Link>
                 </div>
                 {userProfile && (
                     <div style={{ position: 'relative', height: '70px' }}>
@@ -245,19 +246,19 @@ const ProfilePage: React.FC = () => {
                     <div className='sub'>
                     <h1>Profile Information</h1>
                         <div className='profile-info'>
-                            <img src={userProfile.photoURL || "default_profile.png"} alt="User Profile" className='profile-picture' />
+                            <img src={userProfile.photoURL || DefaultProfilePic} alt="User Profile" className='profile-picture' />
                             <p><strong>Username:</strong> {userProfile.displayName}</p>
                             <div>
                                 <label htmlFor="bio"><strong>Bio:</strong></label>
                                 {editBio ? (
                                     <>
                                         <textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} />
-                                        <button onClick={saveBio}>Save Bio</button>
+                                        <button className="editBioButton" onClick={saveBio}>Save Bio</button>
                                     </>
                                 ) : (
                                     <>
                                         <p>{bio}</p>
-                                        <button onClick={handleBioEdit}>Edit Bio</button>
+                                        <button className="editBioButton" onClick={handleBioEdit}>Edit Bio</button>
                                     </>
                                 )}
                             </div>

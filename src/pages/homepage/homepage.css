@@ -43,6 +43,8 @@ body {
     width: 25%;
     background-color: transparent;
     border: none;
+    cursor: pointer;
+    padding: 10px 20px;
     font-size: 200%;
     color: rgb(182, 182, 182);
     text-decoration: none; /* Remove underline from links */

@@ -4,12 +4,11 @@ import HomePage from './pages/homepage/HomePage';
 import ProfilePage from './pages/profilepage/ProfilePage';
 import ScrapbookPage from './pages/scrapbookpage/ScrapbookPage';
 import FriendsListPage from './pages/friendslistpage/FriendsListPage';
-import Topbar from './components/topbar/Topbar';
+
 
 const App: React.FC = () => {
   return (
     <Router>
-      <Topbar />
       <Routes>  // Use Routes to wrap all Route components
         <Route path="/" element={<HomePage />} />  // Use element prop to render components
         <Route path="/profile" element={<ProfilePage />} />
