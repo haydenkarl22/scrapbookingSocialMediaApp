@@ -1,7 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Socket } from 'socket.io-client';
 
 interface WebRTCManagerProps {
-    signaling: WebSocket;
+    signaling: Socket;
+}
+
+interface SignalData {
+    type: string;
+    offer?: RTCSessionDescriptionInit;
+    answer?: RTCSessionDescriptionInit;
+    candidate?: RTCIceCandidateInit;
 }
 
 const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling }) => {
@@ -11,53 +19,33 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling }) => {
     const [inputMessage, setInputMessage] = useState('');
 
     useEffect(() => {
-        // Initialize the RTCPeerConnection
-        peerConnection.current = new RTCPeerConnection();
-
-        // Create data channel immediately upon PeerConnection creation
+        if (!peerConnection.current) return;  // Ensure peerConnection is not null
+        
         dataChannel.current = peerConnection.current.createDataChannel("chatChannel");
         dataChannel.current.onmessage = event => {
             setMessages(prevMessages => [...prevMessages, event.data]);
         };
-        dataChannel.current.onopen = () => {
-            console.log("Data channel is open");
-        };
-        dataChannel.current.onclose = () => {
-            console.log("Data channel is closed");
-        };
 
-        peerConnection.current.onicecandidate = event => {
-            if (event.candidate) {
-                signaling.send(JSON.stringify({ type: 'candidate', candidate: event.candidate }));
+        signaling.on('offer', async (data: SignalData) => {
+            if (peerConnection.current && data.offer) {
+                await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.offer));
+                const answer = await peerConnection.current.createAnswer();
+                await peerConnection.current.setLocalDescription(answer);
+                signaling.emit('answer', { answer: answer });
             }
-        };
+        });
 
-        peerConnection.current.onconnectionstatechange = () => {
-            console.log(`Connection state change: ${peerConnection.current?.connectionState}`);
-        };
-
-        signaling.onmessage = async (message) => {
-            if (!peerConnection.current) return;
-            const data = JSON.parse(message.data);
-            switch (data.type) {
-                case 'offer':
-                    await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.offer));
-                    const answer = await peerConnection.current.createAnswer();
-                    await peerConnection.current.setLocalDescription(answer);
-                    signaling.send(JSON.stringify({ type: 'answer', answer }));
-                    break;
-                case 'answer':
-                    await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
-                    break;
-                case 'candidate':
-                    if (data.candidate) {
-                        await peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-                    }
-                    break;
-                default:
-                    break;
+        signaling.on('answer', async (data: SignalData) => {
+            if (peerConnection.current && data.answer) {
+                await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
             }
-        };
+        });
+
+        signaling.on('candidate', async (data: SignalData) => {
+            if (peerConnection.current && data.candidate) {
+                await peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+            }
+        });
 
         return () => {
             if (peerConnection.current) {
@@ -67,12 +55,12 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling }) => {
                 dataChannel.current.close();
             }
         };
-    }, [signaling]);  // Ensure signaling is stable and not causing re-renders
+    }, [signaling]);
 
     const sendMessage = () => {
         if (dataChannel.current && dataChannel.current.readyState === "open") {
             dataChannel.current.send(inputMessage);
-            setInputMessage(''); // Clear input after sending
+            setInputMessage('');
         }
     };
 

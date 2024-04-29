@@ -9,8 +9,8 @@ import FriendsListPage from './pages/friendslistpage/FriendsListPage';
 const App: React.FC = () => {
   return (
     <Router>
-      <Routes>  // Use Routes to wrap all Route components
-        <Route path="/" element={<HomePage />} />  // Use element prop to render components
+      <Routes>  
+        <Route path="/" element={<HomePage />} />  
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/scrapbook" element={<ScrapbookPage />} />
         <Route path="/friends" element={<FriendsListPage />} />

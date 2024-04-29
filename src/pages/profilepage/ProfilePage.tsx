@@ -1,52 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, deleteUser } from 'firebase/auth';
-import { auth } from '../../firebase-config';
-import { getFirestore, doc, updateDoc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
-import './profilepage.css'; // Ensure the CSS file is correctly imported
+import { auth } from '../../firebase/firebaseConfig';
+import {
+    signUpUser,
+    signInUser,
+    signOutUser,
+    saveUserBio,
+    deleteUserAccount,
+    fetchUserProfile
+} from '../../firebase/authServices';
+import './profilepage.css';
 import TrashBinIcon from '../../assets/bin.png';
 import DefaultProfilePic from '../../assets/vecteezy_default-profile-account-unknown-icon-black-silhouette_20765399.jpg';
 
 const ProfilePage: React.FC = () => {
-    const db = getFirestore();
+    const navigate = useNavigate();
     const [signUpEmail, setSignUpEmail] = useState('');
     const [signUpPassword, setSignUpPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [username, setUsername] = useState('');
-
     const [signInEmail, setSignInEmail] = useState('');
     const [signInPassword, setSignInPassword] = useState('');
-
     const [userProfile, setUserProfile] = useState<any>(null);
     const [bio, setBio] = useState('');
     const [editBio, setEditBio] = useState(false);
-
-    const navigate = useNavigate();
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(async user => {
             if (user) {
                 setUserProfile(user);
-
-                // Check if a Firestore document exists for the user
-                const userDocRef = doc(db, 'users', user.uid);
-                const docSnap = await getDoc(userDocRef);
-
-                if (!docSnap.exists()) {
-                    // If the document does not exist, create it
-                    await setDoc(userDocRef, {
-                        email: user.email,
-                        username: user.displayName || 'New User',
-                        bio: ''  // Initialize with empty bio
-                    });
-                    setBio('');  // Initialize local state
+                const profileData = await fetchUserProfile(user.uid);
+                if (profileData) {
+                    setBio(profileData.bio);  // Assuming 'bio' is part of the profile data
                 } else {
-                    // If the document exists, load the bio from Firestore
-                    setBio(docSnap.data().bio);
+                    // Handle no profile data found, maybe initialize defaults
+                    setBio('');
                 }
             } else {
                 setUserProfile(null);
-                setBio('');  // Clear bio when no user is signed in
+                setBio('');
             }
         });
         return () => unsubscribe();  // Cleanup the subscription
@@ -59,30 +51,18 @@ const ProfilePage: React.FC = () => {
             return;
         }
         try {
-            const userCredential = await createUserWithEmailAndPassword(auth, signUpEmail, signUpPassword);
-            await updateProfile(userCredential.user, { displayName: username });
-            setUserProfile(userCredential.user);
-    
-            // Ensure the user document is created in Firestore when the user is signed up
-            const userDoc = doc(db, 'users', userCredential.user.uid);
-            await setDoc(userDoc, {
-                email: signUpEmail,
-                username: username,
-                bio: ""  // Initialize with empty bio or other default values
-            });
-    
-            navigate('/profile');  
+            await signUpUser(signUpEmail, signUpPassword, username);
+            navigate('/profile');
         } catch (error: any) {
             console.error("Error in SignUp:", error.message);
             alert(error.message);
         }
     };
-    
 
     const handleSignIn = async () => {
         try {
-            await signInWithEmailAndPassword(auth, signInEmail, signInPassword);
-            navigate('/profile');  
+            await signInUser(signInEmail, signInPassword);
+            navigate('/profile');
         } catch (error: any) {
             console.error("Error in SignIn:", error.message);
             alert(error.message);
@@ -91,60 +71,39 @@ const ProfilePage: React.FC = () => {
 
     const handleSignOut = async () => {
         try {
-            await signOut(auth);
-            navigate('/');  // Redirects user to the home page after sign out
+            await signOutUser();
+            navigate('/');
         } catch (error: any) {
             console.error("Error in Sign Out:", error.message);
             alert(error.message);
         }
     };
-    
-    const saveBio = async () => {
-        if (userProfile) {
-            try {
-                const userDoc = doc(db, 'users', userProfile.uid); // Ensure 'users' collection exists in Firestore
-                await updateDoc(userDoc, {
-                    bio: bio
-                });
-                alert("Bio saved!");
-                setEditBio(false);
-            } catch (error: unknown) { // Handle unknown type here
-                if (error instanceof Error) { // Proper type checking
-                    console.error("Error saving bio:", error.message);
-                    alert(`Failed to save bio: ${error.message}`);
-                } else {
-                    console.error("Unexpected error", error);
-                    alert("Failed to save bio due to an unexpected error.");
-                }
-            }
-        }
-    };
-    
-    // Added method to start editing bio
+
     const handleBioEdit = () => {
         setEditBio(true);
     };
 
-    const handleDeleteAccount = async () => {
+    const saveBio = async () => {
         if (userProfile) {
-            // Prompt user to confirm deletion
-            if (window.confirm("Do you really want to delete your account? This action cannot be undone.")) {
-                try {
-                    // Optional: Delete user data from Firestore first
-                    const userDocRef = doc(db, 'users', userProfile.uid);
-                    await deleteDoc(userDocRef);
-    
-                    // Delete user authentication profile
-                    await deleteUser(userProfile);
-                    alert('Your account has been successfully deleted.');
-                    navigate('/'); // Navigate to home or login page
-                } catch (error) {
-                    console.error('Failed to delete account:', error);
-                    alert('Failed to delete your account. Please try again.');
-                }
-            } else {
-                // User chose not to delete the account
-                alert('Your account has not been deleted.');
+            try {
+                await saveUserBio(userProfile.uid, bio);
+                alert("Bio saved!");
+                setEditBio(false);  // Disable edit mode after saving
+            } catch (error: any) {
+                console.error("Error saving bio:", error.message);
+                alert(`Failed to save bio: ${error.message}`);
+            }
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (window.confirm("Do you really want to delete your account? This action cannot be undone.")) {
+            try {
+                await deleteUserAccount(userProfile.uid);
+                navigate('/');
+            } catch (error: any) {
+                console.error('Failed to delete account:', error);
+                alert('Failed to delete your account. Please try again.');
             }
         }
     };
