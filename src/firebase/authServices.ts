@@ -1,4 +1,4 @@
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, deleteUser } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, deleteUser, onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
 
@@ -13,6 +13,17 @@ export const fetchUserProfile = async (userId: string): Promise<any> => {
         return null;
     }
 };
+
+export const observeAuthState = (callback: (userId: string | null) => void) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+            callback(user.uid);
+        } else {
+            callback(null);
+        }
+    });
+    return unsubscribe;
+}
 
 export const signUpUser = async (email: string, password: string, username: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
