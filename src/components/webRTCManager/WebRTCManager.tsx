@@ -13,39 +13,46 @@ interface SignalData {
 }
 
 const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling }) => {
-    const peerConnection = useRef<RTCPeerConnection | null>(new RTCPeerConnection());
+    const peerConnection = useRef<RTCPeerConnection | null>(null);
     const dataChannel = useRef<RTCDataChannel | null>(null);
     const [messages, setMessages] = useState<string[]>([]);
     const [inputMessage, setInputMessage] = useState('');
 
     useEffect(() => {
-        if (!peerConnection.current) return;  // Ensure peerConnection is not null
-        
+        // Initialize the PeerConnection
+        peerConnection.current = new RTCPeerConnection();
+
+        // Create DataChannel
         dataChannel.current = peerConnection.current.createDataChannel("chatChannel");
         dataChannel.current.onmessage = event => {
             setMessages(prevMessages => [...prevMessages, event.data]);
         };
 
-        signaling.on('offer', async (data: SignalData) => {
-            if (peerConnection.current && data.offer) {
+        // Setup signaling event listeners
+        const handleOffer = async (data: SignalData) => {
+            if (data.offer && peerConnection.current) {
                 await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.offer));
                 const answer = await peerConnection.current.createAnswer();
                 await peerConnection.current.setLocalDescription(answer);
-                signaling.emit('answer', { answer: answer });
+                signaling.emit('answer', { answer });
             }
-        });
+        };
 
-        signaling.on('answer', async (data: SignalData) => {
-            if (peerConnection.current && data.answer) {
+        const handleAnswer = async (data: SignalData) => {
+            if (data.answer && peerConnection.current) {
                 await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
             }
-        });
+        };
 
-        signaling.on('candidate', async (data: SignalData) => {
-            if (peerConnection.current && data.candidate) {
+        const handleCandidate = async (data: SignalData) => {
+            if (data.candidate && peerConnection.current) {
                 await peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate));
             }
-        });
+        };
+
+        signaling.on('offer', handleOffer);
+        signaling.on('answer', handleAnswer);
+        signaling.on('candidate', handleCandidate);
 
         return () => {
             if (peerConnection.current) {
@@ -54,6 +61,10 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling }) => {
             if (dataChannel.current) {
                 dataChannel.current.close();
             }
+            // Remove event listeners to prevent memory leaks
+            signaling.off('offer', handleOffer);
+            signaling.off('answer', handleAnswer);
+            signaling.off('candidate', handleCandidate);
         };
     }, [signaling]);
 
