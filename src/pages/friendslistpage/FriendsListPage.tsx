@@ -11,6 +11,7 @@ const socket = io('http://localhost:3000');
 const FriendsListPage: React.FC = () => {
     const [userId, setUserId] = useState<string | null>(null);
     const [friendId, setFriendId] = useState<string>(''); 
+    const [initiateChat, setInitiateChat] = useState<boolean>(false);
     const [friends, setFriends] = useState<any[]>([]);
     const [friendRequests, setFriendRequests] = useState<IFriendRequestDetails[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -79,6 +80,11 @@ const FriendsListPage: React.FC = () => {
             setMessages(prev => [...prev, `You: ${message}`]);
         }
     };
+
+    const handleChat = (id: string) => {
+        setFriendId(id);
+        setInitiateChat(true);  // Assume this user initiates the chat when clicking 'Chat'
+    };
     
     return (
         <>
@@ -131,7 +137,7 @@ const FriendsListPage: React.FC = () => {
                         {messages.map((msg, index) => <p key={index}>{msg}</p>)}
                         <input type="text" onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.value && sendMessage(e.currentTarget.value)} placeholder="Type a message..." />
                     </div>
-                    {friendId ? <WebRTCManager signaling={socket} /> : <p>Connecting...</p>}
+                    {friendId ? <WebRTCManager signaling={socket} initiateChat={initiateChat} /> : <p>Connecting...</p>}
                 </div>
             </div>
         </>
