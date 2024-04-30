@@ -24,63 +24,69 @@
 }
 
 .scrapbook-container {
-display: flex;
-flex-direction: column;
-align-items: center;
-margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  height: calc(100vh - 70px);
+  overflow: hidden;
 }
 
 .canvas-container {
-border: 1px solid #000;
-width: 100%;
-max-width: 800px;
-height: 600px;
-position: relative;
-z-index: 10;
-background-color: white;
-box-sizing: border-box;
+  border: 1px solid #000;
+  width: 100%;
+  max-width: 800px;
+  max-height: calc(100% - 100px);
+  overflow-y: auto;
+  position: relative;
+  z-index: 10;
+  background-color: white;
+  box-sizing: border-box;
+  margin-bottom: 20px;
 }
 
 .canvas-container canvas {
-position: absolute;
-left: 0;
-top: 0;
-width: 100%;
-height: 100%;
+  width: 100%;
+  height: 100%;
 }
 
 .button-container {
-display: flex;
-flex-wrap: wrap;  
-justify-content: space-evenly; 
-align-items: center; 
-margin-top: 20px;
-padding: 10px 0; 
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  align-items: center;
+  margin-top: 20px;
+  padding: 10px 0;
+  flex-shrink: 0;
 }
 
 .button-container input[type="file"],
 .button-container button,
 .button-container input[type="text"] {
-margin: 5px; 
-flex: 1 1 auto; 
-background-color: black; /* Button color */
-color: rgb(182, 182, 182); /* Text color */
-font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
-font-size: 16px; /* Adjusted for uniformity */
-border: none; /* Matches other buttons */
-cursor: pointer;
-border-radius: 5px; /* Optional: if you want rounded corners */
+  margin: 5px;
+  flex: 1 1 auto;
+  background-color: black;
+  color: rgb(182, 182, 182);
+  font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
 }
 
 .input-text-container {
-display: flex; 
-align-items: center; 
-flex-grow: 1;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
 }
 
 .input-text-container input[type="text"] {
-flex-grow: 1; 
-margin-right: 5px; 
-background-color: white; /* Background color for the text input */
-color: black; /* Text color for the input */
+  flex-grow: 1;
+  margin-right: 5px;
+  background-color: white;
+  color: black;
+}
+
+body {
+  overflow-x: hidden;
 }

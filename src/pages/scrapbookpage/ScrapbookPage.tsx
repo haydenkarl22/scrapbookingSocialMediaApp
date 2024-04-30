@@ -29,7 +29,10 @@ const ScrapbookPage: React.FC = () => {
   useEffect(() => {
     if (canvasRef.current) {
       const fabricCanvas = new fabric.Canvas(canvasRef.current);
-      
+  
+      // Clear any existing objects from the canvas
+      fabricCanvas.clear();
+  
       fabricCanvas.on('object:selected', (event) => {
         const selectedObject = event.target;
         if (selectedObject) {
@@ -41,7 +44,6 @@ const ScrapbookPage: React.FC = () => {
           });
           fabricCanvas.renderAll();
         }
-        
       });
   
       fabricCanvas.on('object:moving', (event) => {
@@ -53,6 +55,11 @@ const ScrapbookPage: React.FC = () => {
       });
   
       setCanvas(fabricCanvas);
+  
+      // Clean up the fabric instance when the component unmounts
+      return () => {
+        fabricCanvas.dispose();
+      };
     }
   }, []);
   
