@@ -55,11 +55,27 @@ const FriendsListPage: React.FC = () => {
     
     const handleAddFriend = (id: string): void => {
         if (userId && id) {
+            // Prevent sending a friend request if they are already friends
+            const isAlreadyFriend = friends.some(friend => friend.id === id);
+            if (isAlreadyFriend) {
+                alert("You are already friends!");
+                return;
+            }
+    
+            // Prevent sending a friend request if there's already one pending
+            const hasPendingRequest = friendRequests.some(request => request.id === id);
+            if (hasPendingRequest) {
+                alert("Friend request already sent!");
+                return;
+            }
+    
+            // If no friendship or pending request, proceed to send a new friend request
             const operationDetails: IFriendOperations = { userId: userId, friendId: id };
             sendFriendRequest(operationDetails);
             alert("Friend request sent!"); // Notify that a friend request was sent
         }
-      };
+    };
+    
     
       const handleAcceptFriendRequest = async (id: string): Promise<void> => {
         if (userId && id) {
