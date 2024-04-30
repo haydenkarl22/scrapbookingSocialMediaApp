@@ -1,63 +1,124 @@
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import React, { useState } from 'react';
+import { fabric } from 'fabric';
+import { getStorage, ref, uploadString } from 'firebase/storage';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { db, storage } from '../../firebase/firebaseConfig';
 import './scrapbookpage.css';
-
-interface ImagePosition {
-  x: number;
-  y: number;
-}
-
-interface TextElement {
-  text: string;
-  position: ImagePosition;
-}
+import { getAuth } from 'firebase/auth';
 
 const ScrapbookPage: React.FC = () => {
-  const [text, setText] = useState('');
-  const [images, setImages] = useState<{ file: File; position: ImagePosition }[]>([]);
-  const [textElements, setTextElements] = useState<TextElement[]>([]);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setText(event.target.value);
-  };
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUserId(user.uid);
+      } else {
+        setUserId(null);
+      }
+    });
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (canvasRef.current) {
+      const fabricCanvas = new fabric.Canvas(canvasRef.current);
+      
+      fabricCanvas.on('object:selected', (event) => {
+        const selectedObject = event.target;
+        if (selectedObject) {
+          selectedObject.set({
+            borderColor: 'red',
+            cornerColor: 'red',
+            cornerSize: 10,
+            transparentCorners: false,
+          });
+          fabricCanvas.renderAll();
+        }
+        
+      });
+  
+      fabricCanvas.on('object:moving', (event) => {
+        fabricCanvas.renderAll();
+      });
+  
+      fabricCanvas.on('object:rotating', (event) => {
+        fabricCanvas.renderAll();
+      });
+  
+      setCanvas(fabricCanvas);
+    }
+  }, []);
+  
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setImages([...images, { file: event.target.files[0], position: { x: 0, y: 0 } }]);
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          fabric.Image.fromURL(e.target.result as string, (img) => {
+            img.set({
+              left: 100,
+              top: 100,
+              angle: 0,
+              padding: 10,
+              cornerSize: 10,
+              hasRotatingPoint: true,
+              selectable: true, // Add this line
+              evented: true,
+            });
+            img.scaleToWidth(200);
+            canvas?.add(img);
+            canvas?.setActiveObject(img);
+            canvas?.renderAll();
+          });
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-  };
-
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const files = event.dataTransfer.files;
-    if (files.length > 0) {
-      setImages([
-        ...images,
-        { file: files[0], position: { x: event.clientX, y: event.clientY } },
-      ]);
+  const handleSaveScrapbook = async () => {
+    if (canvas && userId) {
+      const dataURL = canvas.toDataURL();
+      const scrapbookRef = ref(storage, `scrapbooks/${userId}.png`);
+      try {
+        await uploadString(scrapbookRef, dataURL, 'data_url');
+        const userDocRef = doc(db, 'users', userId);
+        await updateDoc(userDocRef, { scrapbookUrl: dataURL });
+        alert('Scrapbook saved successfully!');
+      } catch (error) {
+        console.error('Error saving scrapbook:', error);
+        alert('Failed to save scrapbook. Please try again.');
+      }
     }
   };
 
-  const handleImageDrag = (event: React.DragEvent<HTMLImageElement>, index: number) => {
-    event.preventDefault();
-    const target = event.target as HTMLImageElement;
-    const rect = target.getBoundingClientRect();
-    const newImages = [...images];
-    newImages[index].position = {
-      x: event.clientX - rect.width / 2,
-      y: event.clientY - rect.height / 2,
-    };
-    setImages(newImages);
-  };
-
-  const handleAddText = () => {
-    if (text.trim()) {
-      setTextElements([...textElements, { text: text.trim(), position: { x: 0, y: 0 } }]);
-      setText('');
+  const handleLoadScrapbook = async () => {
+    if (userId) {
+      try {
+        const userDocRef = doc(db, 'users', userId);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const scrapbookUrl = userDoc.data().scrapbookUrl;
+          if (scrapbookUrl) {
+            fabric.Image.fromURL(scrapbookUrl, (img) => {
+              canvas?.clear();
+              canvas?.add(img);
+              canvas?.renderAll();
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading scrapbook:', error);
+        alert('Failed to load scrapbook. Please try again.');
+      }
     }
   };
 
@@ -78,54 +139,14 @@ const ScrapbookPage: React.FC = () => {
           Scrapbook
         </Link>
       </div>
-      <div className="subDiv">
-        <div className="sub">
-          <textarea value={text} onChange={handleTextChange} placeholder="Enter text..." />
-          <button onClick={handleAddText}>Add Text</button>
-          <div
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            style={{
-              position: 'relative',
-              width: '100%',
-              height: '500px',
-              border: '2px dashed #ccc',
-              padding: '20px',
-            }}
-          >
-            {images.map((image, index) => (
-              <img
-                key={index}
-                src={URL.createObjectURL(image.file)}
-                alt="Uploaded"
-                style={{
-                  position: 'absolute',
-                  left: image.position.x,
-                  top: image.position.y,
-                  cursor: 'move',
-                  maxWidth: '200px',
-                  maxHeight: '200px',
-                }}
-                draggable
-                onDragStart={(event) => event.dataTransfer.setData('text/plain', '')}
-                onDrag={(event) => handleImageDrag(event, index)}
-              />
-            ))}
-            {textElements.map((textElement, index) => (
-              <div
-                key={index}
-                style={{
-                  position: 'absolute',
-                  left: textElement.position.x,
-                  top: textElement.position.y,
-                  cursor: 'move',
-                }}
-              >
-                {textElement.text}
-              </div>
-            ))}
-            <input type="file" onChange={handleImageChange} accept="image/*" />
-          </div>
+      <div className="scrapbook-container">
+        <div className="canvas-container">
+          <canvas ref={canvasRef} width={800} height={600} />
+        </div>
+        <div className="button-container">
+          <input type="file" onChange={handleImageUpload} accept="image/*" />
+          <button onClick={handleSaveScrapbook}>Save Scrapbook</button>
+          <button onClick={handleLoadScrapbook}>Load Scrapbook</button>
         </div>
       </div>
     </>

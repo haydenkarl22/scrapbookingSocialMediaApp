@@ -1,7 +1,7 @@
 //fetches and displays the scrapbook submissions associated with the account in the order they were submitted.
 //if the user wants to rearrange the scrapbook, the web page will communicate with this database accordingly.
 //doc is 
-import { db } from '../firebase/firebaseConfig'; // Assume your config file exports a configured Firestore instance
+/*import { db } from '../firebase/firebaseConfig'; // Assume your config file exports a configured Firestore instance
 import { doc, updateDoc, arrayUnion, arrayRemove, getDoc, getDocs, collection, query, orderBy, limit, where } from 'firebase/firestore';
 
 
@@ -108,4 +108,6 @@ export const acceptFriendRequest = async ({ userId, friendId }: IFriendOperation
 
 
 
+*/
 
+export {};
