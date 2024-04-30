@@ -130,7 +130,7 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
             signaling.off('receiveMessage');
             console.log('Cleaned up WebRTC connections.');
         };
-    }, [signaling, initiateChat, userId]);
+    }, [signaling]);
 
     const sendMessage = () => {
         if (dataChannel.current && dataChannel.current.readyState === "open") {
