@@ -1,62 +1,88 @@
 import express from 'express';
 import http from 'http';
-import WebSocket, { WebSocketServer } from 'ws';
+import { Server, Socket } from 'socket.io';
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
+const io = new Server(server, {
+  cors: {
+    origin: 'http://localhost:3000', // Replace with your client-side URL
+    methods: ['GET', 'POST'],
+  },
+});
 
-interface ClientExt extends WebSocket {
-    userId?: string; // Optional property to track user ID
+interface SignalData {
+  type: string;
+  offer?: RTCSessionDescriptionInit & { remoteUserId?: string };
+  answer?: RTCSessionDescriptionInit & { remoteUserId?: string };
+  candidate?: RTCIceCandidateInit & { remoteUserId?: string };
+  from?: string;
 }
 
 interface MessageData {
-    type: 'sendMessage';
-    text: string;
-    from: string;
+  message: string;
+  from: string;
+  to: string;
 }
 
-wss.on('connection', (ws: ClientExt) => {
-    console.log('Client connected');
+const userSockets = new Map<string, Socket>();
 
-    ws.on('message', (data: string) => {
-        try {
-            const message: MessageData = JSON.parse(data);
+io.on('connection', (socket: Socket) => {
+  console.log('Client connected:', socket.id);
 
-            // Use a type assertion to assert that message.type is a string
-            const type = message.type as string;
+  socket.on('setUserId', (userId: string) => {
+    userSockets.set(userId, socket);
+    console.log('User ID set:', userId);
+  });
 
-            // Set user ID for this connection if the message type is 'setUserId'
-            if (type === 'setUserId') {
-                ws.userId = message.from;
-                console.log(`User ID ${message.from} set for a connection`);
-            }
+  socket.on('offer', (data: SignalData) => {
+    const { from, offer } = data;
+    const remoteUserId = offer?.remoteUserId;
+    const remoteSocket = remoteUserId ? userSockets.get(remoteUserId) : undefined;
+    if (remoteSocket) {
+      remoteSocket.emit('offer', { ...data, from });
+    }
+  });
 
-            
-            // Handle sending a message to all connected clients
-            if (type === 'sendMessage') {
-                const broadcastMessage: MessageData = {
-                    type: 'sendMessage',
-                    text: message.text,
-                    from: ws.userId || 'Unknown', // Include the sender's user ID
-                };
+  socket.on('answer', (data: SignalData) => {
+    const { from, answer } = data;
+    const remoteUserId = answer?.remoteUserId;
+    const remoteSocket = remoteUserId ? userSockets.get(remoteUserId) : undefined;
+    if (remoteSocket) {
+      remoteSocket.emit('answer', { ...data, from });
+    }
+  });
 
-                wss.clients.forEach((client: ClientExt) => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(JSON.stringify(broadcastMessage));
-                    }
-                });
-            }
-        } catch (error) {
-            console.error('Failed to parse message', error);
-        }
-    });
+  socket.on('candidate', (data: SignalData) => {
+    const { from, candidate } = data;
+    const remoteUserId = candidate?.remoteUserId;
+    const remoteSocket = remoteUserId ? userSockets.get(remoteUserId) : undefined;
+    if (remoteSocket) {
+      remoteSocket.emit('candidate', { ...data, from });
+    }
+  });
 
-    ws.on('close', () => {
-        console.log('Client disconnected');
-    });
+  socket.on('sendMessage', (data: MessageData) => {
+    const { to } = data;
+    const remoteSocket = userSockets.get(to);
+    if (remoteSocket) {
+      remoteSocket.emit('receiveMessage', data);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+    // Remove the socket from the userSockets map
+    for (const [userId, userSocket] of userSockets.entries()) {
+      if (userSocket === socket) {
+        userSockets.delete(userId);
+        break;
+      }
+    }
+  });
 });
 
-server.listen(8080, () => {
-    console.log('Server is running on http://localhost:8080');
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
 });

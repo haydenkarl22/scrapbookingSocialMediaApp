@@ -166,7 +166,7 @@ const FriendsListPage: React.FC = () => {
                         {messages.map((msg, index) => <p key={index}>{msg}</p>)}
                         <input type="text" onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.value && sendMessage(e.currentTarget.value)} placeholder="Type a message..." />
                     </div>
-                    {friendId && userId ? <WebRTCManager signaling={socket} initiateChat={initiateChat} userId={userId} /> : <p>Connecting...</p>}
+                    {friendId && userId ? <WebRTCManager signaling={socket} initiateChat={initiateChat} userId={userId} remoteUserId={friendId} /> : <p>Connecting...</p>}
                 </div>
             </div>
         </>

@@ -5,6 +5,7 @@ interface WebRTCManagerProps {
     signaling: Socket;
     initiateChat: boolean; // A prop to determine if this user should initiate the chat
     userId: string; // User ID of the current user
+    remoteUserId: string;
 }
 
 interface SignalData {
@@ -12,6 +13,7 @@ interface SignalData {
     offer?: RTCSessionDescriptionInit;
     answer?: RTCSessionDescriptionInit;
     candidate?: RTCIceCandidateInit;
+    from?: string;
 }
 
 interface MessageData {
@@ -19,7 +21,7 @@ interface MessageData {
     from: string;
 }
 
-const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, userId }) => {
+const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, userId, remoteUserId }) => {
     const peerConnection = useRef<RTCPeerConnection | null>(null);
     const dataChannel = useRef<RTCDataChannel | null>(null);
     const [messages, setMessages] = useState<string[]>([]);
@@ -85,7 +87,7 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
         }
 
         signaling.on('offer', async (data: SignalData) => {
-            if (!initiateChat) {
+            if (!initiateChat && data.from === remoteUserId) {
                 
                 prepareConnection();
                 if (peerConnection.current && data.offer) {
@@ -95,7 +97,7 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
                     const answer = await peerConnection.current.createAnswer();
                     if (answer) {
                         await peerConnection.current.setLocalDescription(answer);
-                        signaling.emit('answer', { answer });
+                        signaling.emit('answer', { answer, from: userId });
                         console.log('Answer created and emitted:', answer);
                     }
                 }
@@ -103,22 +105,28 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
         });
 
         signaling.on('answer', async (data: SignalData) => {
-            if (peerConnection.current && data.answer) {
-                await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+            if (data.from === remoteUserId) {
+                if (peerConnection.current && data.answer) {
+                    await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
                 console.log('Remote description set with answer:', data.answer);
+                }
             }
         });
 
         signaling.on('candidate', async (data: SignalData) => {
-            if (peerConnection.current && data.candidate) {
-                await peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-                console.log('ICE candidate added:', data.candidate);
+            if (data.from === remoteUserId) {
+                if (peerConnection.current && data.candidate) {
+                    await peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    console.log('ICE candidate added:', data.candidate);
+                }
             }
         });
 
         // Listen for incoming messages
         signaling.on('receiveMessage', (data: MessageData) => {
-            setMessages(prev => [...prev, `${data.from}: ${data.message}`]);
+            if (data.from === remoteUserId) {
+                setMessages(prev => [...prev, `${data.from}: ${data.message}`]);
+            }
         });
 
         return () => {
@@ -130,7 +138,7 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
             signaling.off('receiveMessage');
             console.log('Cleaned up WebRTC connections.');
         };
-    }, [signaling]);
+    }, [signaling, initiateChat, userId, remoteUserId]);
 
     const sendMessage = () => {
         if (dataChannel.current && dataChannel.current.readyState === "open") {
