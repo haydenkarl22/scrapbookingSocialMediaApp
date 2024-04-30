@@ -59,11 +59,12 @@ const HomePage: React.FC = () => {
       </div>
       <div className='subDiv'>
         <div className='sub'>
-          <input className="scrapname" type="text" placeholder="My Scrapbook" />
           {scrapbookUrl ? (
             <div>
               <h2>Your Scrapbook:</h2>
-              <img src={scrapbookUrl} alt="Scrapbook" />
+              <div style={{ border: '2px solid black', width: 'fit-content' }}>
+                <img src={scrapbookUrl} alt="Scrapbook" />
+              </div>
             </div>
           ) : (
             <p>No scrapbook found. Create one in the Scrapbook section.</p>
