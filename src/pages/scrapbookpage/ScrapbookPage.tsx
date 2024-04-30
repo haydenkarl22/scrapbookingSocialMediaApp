@@ -11,6 +11,7 @@ const ScrapbookPage: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [textInput, setTextInput] = useState('');
 
   useEffect(() => {
     const auth = getAuth();
@@ -28,7 +29,7 @@ const ScrapbookPage: React.FC = () => {
   useEffect(() => {
     if (canvasRef.current) {
       const fabricCanvas = new fabric.Canvas(canvasRef.current);
-      
+
       fabricCanvas.on('object:selected', (event) => {
         const selectedObject = event.target;
         if (selectedObject) {
@@ -40,21 +41,19 @@ const ScrapbookPage: React.FC = () => {
           });
           fabricCanvas.renderAll();
         }
-        
       });
-  
+
       fabricCanvas.on('object:moving', (event) => {
         fabricCanvas.renderAll();
       });
-  
+
       fabricCanvas.on('object:rotating', (event) => {
         fabricCanvas.renderAll();
       });
-  
+
       setCanvas(fabricCanvas);
     }
   }, []);
-  
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -70,7 +69,7 @@ const ScrapbookPage: React.FC = () => {
               padding: 10,
               cornerSize: 10,
               hasRotatingPoint: true,
-              selectable: true, // Add this line
+              selectable: true,
               evented: true,
             });
             img.scaleToWidth(200);
@@ -81,6 +80,29 @@ const ScrapbookPage: React.FC = () => {
         }
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleTextInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setTextInput(event.target.value);
+  };
+
+  const handleAddText = () => {
+    if (canvas && textInput.trim() !== '') {
+      const iText = new fabric.IText(textInput, {
+        left: 100,
+        top: 100,
+        fontFamily: 'Arial',
+        fontSize: 24,
+        fill: 'black',
+        selectable: true,
+        evented: true,
+      });
+
+      canvas.add(iText);
+      canvas.setActiveObject(iText);
+      canvas.renderAll();
+      setTextInput('');
     }
   };
 
@@ -145,6 +167,13 @@ const ScrapbookPage: React.FC = () => {
         </div>
         <div className="button-container">
           <input type="file" onChange={handleImageUpload} accept="image/*" />
+          <input
+            type="text"
+            value={textInput}
+            onChange={handleTextInputChange}
+            placeholder="Enter text..."
+          />
+          <button onClick={handleAddText}>Add Text</button>
           <button onClick={handleSaveScrapbook}>Save Scrapbook</button>
           <button onClick={handleLoadScrapbook}>Load Scrapbook</button>
         </div>
