@@ -44,12 +44,6 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
                     dataChannel.current = event.channel;
                     setupDataChannelHandlers();
                 };
-        
-                if (initiateChat) {
-                    // DataChannel should be created by the chat initiator only
-                    dataChannel.current = peerConnection.current.createDataChannel("chatChannel");
-                    setupDataChannelHandlers();
-                }
             }
         };
 
@@ -60,6 +54,7 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
                 };
                 dataChannel.current.onclose = () => {
                     console.log("DataChannel closed");
+                    dataChannel.current = null;
                 };
                 dataChannel.current.onmessage = event => {
                     setMessages(prev => [...prev, event.data]);
@@ -88,7 +83,6 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
 
         signaling.on('offer', async (data: SignalData) => {
             if (!initiateChat && data.from === remoteUserId) {
-                
                 prepareConnection();
                 if (peerConnection.current && data.offer) {
                     await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.offer));
@@ -123,8 +117,19 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
         });
 
         return () => {
-            peerConnection.current?.close();
-            dataChannel.current?.close();
+            if (peerConnection.current) {
+                peerConnection.current.onicecandidate = null;
+                peerConnection.current.ondatachannel = null;
+                peerConnection.current.close();
+                peerConnection.current = null;
+            }
+            if (dataChannel.current) {
+                dataChannel.current.onopen = null;
+                dataChannel.current.onclose = null;
+                dataChannel.current.onmessage = null;
+                dataChannel.current.close();
+                dataChannel.current = null;
+            }
             signaling.off('offer');
             signaling.off('answer');
             signaling.off('candidate');
