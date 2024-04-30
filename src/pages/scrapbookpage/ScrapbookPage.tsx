@@ -11,6 +11,7 @@ const ScrapbookPage: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [text, setText] = useState('');
 
   useEffect(() => {
     const auth = getAuth();
@@ -70,6 +71,7 @@ const ScrapbookPage: React.FC = () => {
               padding: 10,
               cornerSize: 10,
               hasRotatingPoint: true,
+              hasControls: true,
               selectable: true, // Add this line
               evented: true,
             });
@@ -122,6 +124,33 @@ const ScrapbookPage: React.FC = () => {
     }
   };
 
+  const handleAddText = () => {
+    if (text.trim() !== '' && canvas) {
+      const textBox = new fabric.Textbox(text, {
+        left: 100,
+        top: 100,
+        width: 200,
+        fontSize: 20,
+        fontFamily: 'Arial',
+        fill: 'black',
+        hasControls: true,
+        selectable: true,
+      });
+      canvas.add(textBox);
+      canvas.setActiveObject(textBox);
+      canvas.renderAll();
+      setText('');
+    }
+  };
+
+  const handleResetScrapbook = () => {
+    if (window.confirm("Are you sure you want to reset your scrapbook? This action cannot be undone.")) {
+      canvas?.clear();
+      canvas?.renderAll();
+      alert('Scrapbook has been reset.');
+    }
+  };
+
   return (
     <>
       <header className="nohead">ScrapP@ges</header>
@@ -147,7 +176,18 @@ const ScrapbookPage: React.FC = () => {
           <input type="file" onChange={handleImageUpload} accept="image/*" />
           <button onClick={handleSaveScrapbook}>Save Scrapbook</button>
           <button onClick={handleLoadScrapbook}>Load Scrapbook</button>
+          <button onClick={handleResetScrapbook}>Reset Scrapbook</button>
+          <div className="input-text-container">
+            <input
+              type="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Enter text..."
+            />
+            <button onClick={handleAddText}>Add Text</button>
+          </div>
         </div>
+
       </div>
     </>
   );

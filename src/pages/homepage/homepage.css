@@ -64,20 +64,19 @@ body {
     color: cyan;
 }
 
-.subDiv {
-    position: relative;
-    width: 100%;
-    height: 75px;
-}
-
 .sub {
-    position: absolute;
-    top: 15%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 50%;
-    height: 100%;
-}
+    width: 100%; 
+    display: flex;
+    justify-content: center;
+  }
+  
+  .subDiv {
+    display: flex;
+    justify-content: center; 
+    align-items: center; 
+    width: 100%;
+  }
+  
 
 .scrapname {
     font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
@@ -95,3 +94,15 @@ body {
     font-size: 36px;
     box-shadow: 10px 10px 0px black;
 }
+
+.scrapbook-box {
+    width: 800px; 
+    height: 600px; 
+    margin: 0 auto; 
+    border: 2px solid black;
+    background-color: white;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+  }
+  

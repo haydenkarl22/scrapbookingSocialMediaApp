@@ -135,27 +135,27 @@ const FriendsListPage: React.FC = () => {
                     <div>
                         <h2>Search Results:</h2>
                         {searchResults.map(user => (
-                            <div key={user.id}>
-                                {user.username} <button onClick={() => handleAddFriend(user.id)}>Add Friend</button>
+                            <div key={user.id} className="user-item">
+                                <span>{user.username}</span>
+                                <button onClick={() => handleAddFriend(user.id)}>Add Friend</button>
                             </div>
                         ))}
-
                     </div>
                     <div>
                         <h2>Friend Requests:</h2>
                         {friendRequests.map(request => (
-                            <div key={request.id}>
-                                {request.username}
+                            <div key={request.id} className="friend-request-item">
+                                <span>{request.username}</span>
                                 <button onClick={() => handleAcceptFriendRequest(request.id)}>Accept</button>
-                                {/* Implement a decline button if needed */}
+                            {/* Implement a decline button if needed */}
                             </div>
                         ))}
                     </div>
                     <div>
                         <h2>Friends</h2>
                         {friends.map(friend => (
-                            <div key={friend.id}>
-                                {friend.username}
+                            <div key={friend.id} className="friend-item">
+                                <span>{friend.username}</span>
                                 <button onClick={() => handleChat(friend.id)}>Chat</button>
                                 <button onClick={handleCloseChat}>End Chat</button>
                                 <button onClick={() => handleDeleteFriend(friend.id)}>Delete</button>
@@ -173,5 +173,5 @@ const FriendsListPage: React.FC = () => {
         </>
     );
 };
-    
+
 export default FriendsListPage;

@@ -62,7 +62,7 @@ const HomePage: React.FC = () => {
           {scrapbookUrl ? (
             <div>
               <h2>Your Scrapbook:</h2>
-              <div style={{ border: '2px solid black', width: 'fit-content' }}>
+              <div className="scrapbook-box">
                 <img src={scrapbookUrl} alt="Scrapbook" />
               </div>
             </div>
