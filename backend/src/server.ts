@@ -11,74 +11,29 @@ const io = new Server(server, {
   },
 });
 
-interface SignalData {
-  type: string;
-  offer?: RTCSessionDescriptionInit & { remoteUserId?: string };
-  answer?: RTCSessionDescriptionInit & { remoteUserId?: string };
-  candidate?: RTCIceCandidateInit & { remoteUserId?: string };
-  from?: string;
-}
-
-interface MessageData {
-  message: string;
+interface SignalingData {
   from: string;
   to: string;
+  type: string;
+  data: any;
 }
-
-const userSockets = new Map<string, Socket>();
 
 io.on('connection', (socket: Socket) => {
   console.log('Client connected:', socket.id);
 
-  socket.on('setUserId', (userId: string) => {
-    userSockets.set(userId, socket);
-    console.log('User ID set:', userId);
+  socket.on('join', (userId: string) => {
+    socket.join(userId);
+    console.log(`User ${userId} joined the room`);
   });
 
-  socket.on('offer', (data: SignalData) => {
-    const { from, offer } = data;
-    const remoteUserId = offer?.remoteUserId;
-    const remoteSocket = remoteUserId ? userSockets.get(remoteUserId) : undefined;
-    if (remoteSocket) {
-      remoteSocket.emit('offer', { ...data, from });
-    }
-  });
-
-  socket.on('answer', (data: SignalData) => {
-    const { from, answer } = data;
-    const remoteUserId = answer?.remoteUserId;
-    const remoteSocket = remoteUserId ? userSockets.get(remoteUserId) : undefined;
-    if (remoteSocket) {
-      remoteSocket.emit('answer', { ...data, from });
-    }
-  });
-
-  socket.on('candidate', (data: SignalData) => {
-    const { from, candidate } = data;
-    const remoteUserId = candidate?.remoteUserId;
-    const remoteSocket = remoteUserId ? userSockets.get(remoteUserId) : undefined;
-    if (remoteSocket) {
-      remoteSocket.emit('candidate', { ...data, from });
-    }
-  });
-
-  socket.on('sendMessage', (data: MessageData) => {
-    const { to } = data;
-    const remoteSocket = userSockets.get(to);
-    if (remoteSocket) {
-      remoteSocket.emit('receiveMessage', data);
-    }
+  socket.on('signaling', (data: SignalingData) => {
+    const { from, to, type, data: signalingData } = data;
+    console.log(`Received signaling message of type ${type} from ${from} to ${to}`);
+    socket.to(to).emit('signaling', { from, type, data: signalingData });
   });
 
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
-    // Remove the socket from the userSockets map
-    for (const [userId, userSocket] of userSockets.entries()) {
-      if (userSocket === socket) {
-        userSockets.delete(userId);
-        break;
-      }
-    }
   });
 });
 
