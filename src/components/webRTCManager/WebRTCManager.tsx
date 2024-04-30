@@ -35,7 +35,7 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
                 
                 peerConnection.current.onicecandidate = event => {
                     if (event.candidate) {
-                        signaling.emit('candidate', { candidate: event.candidate.toJSON() });
+                        signaling.emit('candidate', { candidate: event.candidate.toJSON(), remoteUserId });
                         console.log('ICE candidate emitted:', event.candidate);
                     }
                 };
@@ -109,7 +109,6 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
                 if (peerConnection.current && data.answer) {
                     await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
                     console.log('Remote description set with answer:', data.answer);
-                    setupDataChannelHandlers();
                 }
             }
         });
@@ -123,20 +122,12 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
             }
         });
 
-        // Listen for incoming messages
-        signaling.on('receiveMessage', (data: MessageData) => {
-            if (data.from === remoteUserId) {
-                setMessages(prev => [...prev, `${data.from}: ${data.message}`]);
-            }
-        });
-
         return () => {
             peerConnection.current?.close();
             dataChannel.current?.close();
             signaling.off('offer');
             signaling.off('answer');
             signaling.off('candidate');
-            signaling.off('receiveMessage');
             console.log('Cleaned up WebRTC connections.');
         };
     }, [signaling, initiateChat, userId, remoteUserId]);
