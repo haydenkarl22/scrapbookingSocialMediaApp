@@ -27,13 +27,24 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
 
     useEffect(() => {
         const prepareConnection = () => {
-            if (peerConnection.current) {
-                console.log('Preparing new WebRTC connection.');
+            peerConnection.current = new RTCPeerConnection();
+            console.log('Preparing new WebRTC connection.');
+
+            if (initiateChat || !dataChannel.current) {
                 dataChannel.current = peerConnection.current.createDataChannel("chatChannel");
+                dataChannel.current.onopen = () => {
+                    console.log("DataChannel opened");
+                };
+                dataChannel.current.onclose = () => {
+                    console.log("Datachannel closed");
+                };
                 dataChannel.current.onmessage = (event) => {
                     setMessages(prev => [...prev, event.data]);
+                    console.log("Message received on DataChannel:", event.data);
                 };
+            }
 
+            
                 peerConnection.current.onicecandidate = (event) => {
                     if (event.candidate) {
                         signaling.emit('candidate', { candidate: event.candidate.toJSON() });
@@ -42,13 +53,15 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
                 };
 
                 peerConnection.current.ondatachannel = (event) => {
-                    dataChannel.current = event.channel;
-                    dataChannel.current.onmessage = (event) => {
-                        setMessages(prev => [...prev, event.data]);
-                    };
+                    if (!dataChannel.current) {
+                        dataChannel.current = event.channel;
+                        dataChannel.current.onmessage = (event) => {
+                            setMessages(prev => [...prev, event.data]);
+                            console.log("Message received on DataChannel:", event.data);
+                        };
+                    }
                 };
-            }
-        };
+            };
 
         // Set the user ID for this connection
         signaling.emit('setUserId', userId);

@@ -32,12 +32,13 @@ wss.on('connection', (ws: ClientExt) => {
                 console.log(`User ID ${message.from} set for a connection`);
             }
 
+            
             // Handle sending a message to all connected clients
             if (type === 'sendMessage') {
                 const broadcastMessage: MessageData = {
                     type: 'sendMessage',
                     text: message.text,
-                    from: ws.userId || 'Unknown',
+                    from: ws.userId || 'Unknown', // Include the sender's user ID
                 };
 
                 wss.clients.forEach((client: ClientExt) => {
