@@ -16,25 +16,20 @@ interface SignalData {
 }
 
 const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, userId, remoteUserId }) => {
-    const peerConnection = useRef<RTCPeerConnection | null>(new RTCPeerConnection());
+    const peerConnection = useRef<RTCPeerConnection | null>(null);
     const dataChannel = useRef<RTCDataChannel | null>(null);
     const [messages, setMessages] = useState<string[]>([]);
     const [inputMessage, setInputMessage] = useState('');
 
     useEffect(() => {
         const prepareConnection = () => {
-            // Ensure PeerConnection is not null
-            if (!peerConnection.current) return;
-
-            // DataChannel setup
-            dataChannel.current = peerConnection.current.createDataChannel("chatChannel");
-            dataChannel.current.onmessage = event => {
-                setMessages(prev => [...prev, event.data]);
-            };
+            if (!peerConnection.current) {
+                peerConnection.current = new RTCPeerConnection();
+            }
 
             peerConnection.current.onicecandidate = event => {
                 if (event.candidate) {
-                    signaling.emit('candidate', { candidate: event.candidate.toJSON(), from: userId, to: remoteUserId });
+                    signaling.emit('signaling', { type: 'candidate', candidate: event.candidate.toJSON(), from: userId, to: remoteUserId });
                 }
             };
 
@@ -46,34 +41,49 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
             };
         };
 
+        const createDataChannel = () => {
+            if (peerConnection.current && peerConnection.current.signalingState !== 'closed') {
+                dataChannel.current = peerConnection.current.createDataChannel("chatChannel");
+                dataChannel.current.onmessage = event => {
+                    setMessages(prev => [...prev, event.data]);
+                };
+            }
+        };
+
         if (initiateChat) {
             prepareConnection();
-            if (!peerConnection.current) return;
-            peerConnection.current.createOffer().then(offer => {
-                peerConnection.current?.setLocalDescription(offer);
-                signaling.emit('offer', { offer, from: userId, to: remoteUserId });
-            });
+            createDataChannel();
+            if (peerConnection.current && peerConnection.current.signalingState !== 'closed') {
+                peerConnection.current.createOffer().then(offer => {
+                    peerConnection.current?.setLocalDescription(offer);
+                    signaling.emit('signaling', { type: 'offer', offer, from: userId, to: remoteUserId });
+                });
+            }
         }
 
-        signaling.on('offer', async (data: SignalData) => {
-            if (!initiateChat && data.offer) {
-                prepareConnection();
-                await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(data.offer));
-                const answer = await peerConnection.current?.createAnswer();
-                await peerConnection.current?.setLocalDescription(answer);
-                signaling.emit('answer', { answer, from: userId, to: remoteUserId });
-            }
-        });
-
-        signaling.on('answer', async (data: SignalData) => {
-            if (data.answer) {
-                await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(data.answer));
-            }
-        });
-
-        signaling.on('candidate', async (data: SignalData) => {
-            if (data.candidate) {
-                await peerConnection.current?.addIceCandidate(new RTCIceCandidate(data.candidate));
+        signaling.on('signaling', async (data: SignalData & { from: string, to: string }) => {
+            if (data.from === remoteUserId) {
+                switch (data.type) {
+                    case 'offer':
+                        if (!initiateChat && data.offer) {
+                            prepareConnection();
+                            await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(data.offer));
+                            const answer = await peerConnection.current?.createAnswer();
+                            await peerConnection.current?.setLocalDescription(answer);
+                            signaling.emit('signaling', { type: 'answer', answer, from: userId, to: remoteUserId });
+                        }
+                        break;
+                    case 'answer':
+                        if (data.answer) {
+                            await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(data.answer));
+                        }
+                        break;
+                    case 'candidate':
+                        if (data.candidate) {
+                            await peerConnection.current?.addIceCandidate(new RTCIceCandidate(data.candidate));
+                        }
+                        break;
+                }
             }
         });
 

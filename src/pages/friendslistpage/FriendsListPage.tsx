@@ -81,7 +81,7 @@ const FriendsListPage: React.FC = () => {
         if (userId && id) {
           const username = await acceptFriendRequest({ userId, friendId: id });
           setFriendRequests(prev => prev.filter(req => req.id !== id));  // Remove from requests
-          setFriends(prev => [...prev, username]);  // Add username to friends list
+          setFriends(prev => [...prev, {id: id, username: username}]);  // Add username to friends list
         }
       };
       
@@ -94,14 +94,6 @@ const FriendsListPage: React.FC = () => {
           }
         }
       };
-    
-      const sendMessage = (message: string): void => {
-        if (friendId && userId) {
-            const messageData: MessageData = { message, from: userId };
-            socket.emit('sendMessage', messageData);
-            setMessages(prev => [...prev, `You: ${message}`]);
-        }
-    };
 
     const handleChat = (id: string) => {
         setFriendId(id);
@@ -111,6 +103,14 @@ const FriendsListPage: React.FC = () => {
     const handleCloseChat = () => {
         setInitiateChat(false);
         setFriendId('');
+    };
+
+    const sendMessage = (message: string): void => {
+        if (friendId && userId) {
+            const messageData: MessageData = { message, from: userId };
+            socket.emit('sendMessage', messageData); // Assuming this is the correct event name
+            setMessages(prev => [...prev, `You: ${message}`]); // Appends the new message to the chat history
+        }
     };
     
     
@@ -171,7 +171,6 @@ const FriendsListPage: React.FC = () => {
             </div>
         </>
     );
-    };
+};
     
-    export default FriendsListPage;
-    
+export default FriendsListPage;
