@@ -6,7 +6,7 @@ import { IFriendRequestDetails, addFriend, deleteFriend, fetchFriends, searchUse
 import { observeAuthState } from '../../firebase/authServices';
 import io from 'socket.io-client';
 
-const socket = io('http://localhost:3000');
+const socket = io('http://localhost:8080');
 
 interface MessageData {
     message: string;
@@ -139,6 +139,7 @@ const FriendsListPage: React.FC = () => {
                                 {user.username} <button onClick={() => handleAddFriend(user.id)}>Add Friend</button>
                             </div>
                         ))}
+
                     </div>
                     <div>
                         <h2>Friend Requests:</h2>
