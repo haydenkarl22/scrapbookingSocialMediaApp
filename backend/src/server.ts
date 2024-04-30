@@ -11,13 +11,6 @@ const io = new Server(server, {
   },
 });
 
-interface SignalingData {
-  from: string;
-  to: string;
-  type: string;
-  data: any;
-}
-
 io.on('connection', (socket: Socket) => {
   console.log('Client connected:', socket.id);
 
@@ -26,18 +19,17 @@ io.on('connection', (socket: Socket) => {
     console.log(`User ${userId} joined the room`);
   });
 
-  socket.on('signaling', (data: SignalingData) => {
-    const { from, to, type, data: signalingData } = data;
-    console.log(`Received signaling message of type ${type} from ${from} to ${to}`);
-    socket.to(to).emit('signaling', { from, type, data: signalingData });
+  socket.on('signaling', (message) => {
+    console.log(`Received signaling message from ${message.from} to ${message.to}`, message);
+    socket.to(message.to).emit('signaling', message);
   });
 
   socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+    console.log(`Client disconnected: ${socket.id}`);
   });
 });
 
-const PORT = process.env.PORT || 8080;
+const PORT = 8080;
 server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });

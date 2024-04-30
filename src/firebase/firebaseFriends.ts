@@ -1,6 +1,7 @@
 import { db } from '../firebase/firebaseConfig'; // Assume your config file exports a configured Firestore instance
 import { doc, updateDoc, arrayUnion, arrayRemove, getDoc, getDocs, collection, query, where } from 'firebase/firestore';
 
+
 // TypeScript interface for type safety
 export interface IFriendOperations {
   userId: string;
