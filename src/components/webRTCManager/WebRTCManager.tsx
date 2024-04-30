@@ -10,11 +10,11 @@ interface WebRTCManagerProps {
 
 interface SignalData {
     type: string;
-    offer?: RTCSessionDescriptionInit;
-    answer?: RTCSessionDescriptionInit;
-    candidate?: RTCIceCandidateInit;
+    offer?: RTCSessionDescriptionInit & { remoteUserId?: string };
+    answer?: RTCSessionDescriptionInit & { remoteUserId?: string };
+    candidate?: RTCIceCandidateInit & { remoteUserId?: string };
     from?: string;
-}
+  }
 
 interface MessageData {
     message: string;
@@ -73,18 +73,18 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
         console.log('Signaling setUserId:', userId);
 
         if (initiateChat) {
-            
             prepareConnection();
-            if (peerConnection.current) {
-                peerConnection.current.createOffer().then(offer => {
-                    if (peerConnection.current && offer) {
-                        peerConnection.current.setLocalDescription(offer);
-                        signaling.emit('offer', { offer });
-                    }
-                });
-            }
-            
-        }
+            const createOffer = async () => {
+              if (peerConnection.current && peerConnection.current.signalingState !== 'closed') {
+                const offer = await peerConnection.current.createOffer();
+                if (peerConnection.current && offer) {
+                  await peerConnection.current.setLocalDescription(offer);
+                  signaling.emit('offer', { offer, remoteUserId });
+                }
+              }
+            };
+            createOffer();
+          }
 
         signaling.on('offer', async (data: SignalData) => {
             if (!initiateChat && data.from === remoteUserId) {
