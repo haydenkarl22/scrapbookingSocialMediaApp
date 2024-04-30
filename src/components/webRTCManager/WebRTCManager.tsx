@@ -97,7 +97,7 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
                     const answer = await peerConnection.current.createAnswer();
                     if (answer) {
                         await peerConnection.current.setLocalDescription(answer);
-                        signaling.emit('answer', { answer, from: userId });
+                        signaling.emit('answer', { answer, remoteUserId: userId });
                         console.log('Answer created and emitted:', answer);
                     }
                 }
@@ -108,7 +108,8 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
             if (data.from === remoteUserId) {
                 if (peerConnection.current && data.answer) {
                     await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
-                console.log('Remote description set with answer:', data.answer);
+                    console.log('Remote description set with answer:', data.answer);
+                    setupDataChannelHandlers();
                 }
             }
         });
