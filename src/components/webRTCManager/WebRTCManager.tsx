@@ -27,41 +27,44 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
 
     useEffect(() => {
         const prepareConnection = () => {
-            peerConnection.current = new RTCPeerConnection();
-            console.log('Preparing new WebRTC connection.');
-
-            if (initiateChat || !dataChannel.current) {
-                dataChannel.current = peerConnection.current.createDataChannel("chatChannel");
-                dataChannel.current.onopen = () => {
-                    console.log("DataChannel opened");
-                };
-                dataChannel.current.onclose = () => {
-                    console.log("Datachannel closed");
-                };
-                dataChannel.current.onmessage = (event) => {
-                    setMessages(prev => [...prev, event.data]);
-                    console.log("Message received on DataChannel:", event.data);
-                };
-            }
-
-            
-                peerConnection.current.onicecandidate = (event) => {
+            if (!peerConnection.current) {
+                peerConnection.current = new RTCPeerConnection();
+                console.log('Preparing new WebRTC connection.');
+                
+                peerConnection.current.onicecandidate = event => {
                     if (event.candidate) {
                         signaling.emit('candidate', { candidate: event.candidate.toJSON() });
                         console.log('ICE candidate emitted:', event.candidate);
                     }
                 };
-
-                peerConnection.current.ondatachannel = (event) => {
-                    if (!dataChannel.current) {
-                        dataChannel.current = event.channel;
-                        dataChannel.current.onmessage = (event) => {
-                            setMessages(prev => [...prev, event.data]);
-                            console.log("Message received on DataChannel:", event.data);
-                        };
-                    }
+        
+                peerConnection.current.ondatachannel = event => {
+                    dataChannel.current = event.channel;
+                    setupDataChannelHandlers();
                 };
-            };
+        
+                if (initiateChat) {
+                    // DataChannel should be created by the chat initiator only
+                    dataChannel.current = peerConnection.current.createDataChannel("chatChannel");
+                    setupDataChannelHandlers();
+                }
+            }
+        };
+
+        const setupDataChannelHandlers = () => {
+            if (dataChannel.current) {
+                dataChannel.current.onopen = () => {
+                    console.log("DataChannel opened");
+                };
+                dataChannel.current.onclose = () => {
+                    console.log("DataChannel closed");
+                };
+                dataChannel.current.onmessage = event => {
+                    setMessages(prev => [...prev, event.data]);
+                    console.log("Message received on DataChannel:", event.data);
+                };
+            }
+        };
 
         // Set the user ID for this connection
         signaling.emit('setUserId', userId);

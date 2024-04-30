@@ -107,6 +107,12 @@ const FriendsListPage: React.FC = () => {
         setFriendId(id);
         setInitiateChat(true);  // Assume this user initiates the chat when clicking 'Chat'
     };
+
+    const handleCloseChat = () => {
+        setInitiateChat(false);
+        setFriendId('');
+    };
+    
     
     return (
         <>
@@ -150,6 +156,7 @@ const FriendsListPage: React.FC = () => {
                             <div key={friend.id}>
                                 {friend.username}
                                 <button onClick={() => handleChat(friend.id)}>Chat</button>
+                                <button onClick={handleCloseChat}>End Chat</button>
                                 <button onClick={() => handleDeleteFriend(friend.id)}>Delete</button>
                             </div>
                         ))}
