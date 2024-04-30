@@ -14,6 +14,11 @@ interface SignalData {
     candidate?: RTCIceCandidateInit;
 }
 
+interface MessageData {
+    message: string;
+    from: string;
+}
+
 const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, userId }) => {
     const peerConnection = useRef<RTCPeerConnection | null>(null);
     const dataChannel = useRef<RTCDataChannel | null>(null);
@@ -85,7 +90,7 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
         });
 
         // Listen for incoming messages
-        signaling.on('receiveMessage', (data: { message: string; from: string }) => {
+        signaling.on('receiveMessage', (data: MessageData) => {
             setMessages(prev => [...prev, `${data.from}: ${data.message}`]);
         });
 

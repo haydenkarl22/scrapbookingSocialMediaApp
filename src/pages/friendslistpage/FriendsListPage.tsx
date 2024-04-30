@@ -81,7 +81,8 @@ const FriendsListPage: React.FC = () => {
     
       const sendMessage = (message: string): void => {
         if (friendId && userId) {
-            socket.emit('sendMessage', { message, from: userId });
+            const messageData: MessageData = { message, from: userId };
+            socket.emit('sendMessage', messageData);
             setMessages(prev => [...prev, `You: ${message}`]);
         }
     };
@@ -132,7 +133,7 @@ const FriendsListPage: React.FC = () => {
                         {friends.map(friend => (
                             <div key={friend.id}>
                                 {friend.username}
-                                <button onClick={() => setFriendId(friend.id)}>Chat</button>
+                                <button onClick={() => handleChat(friend.id)}>Chat</button>
                                 <button onClick={() => handleDeleteFriend(friend.id)}>Delete</button>
                             </div>
                         ))}
