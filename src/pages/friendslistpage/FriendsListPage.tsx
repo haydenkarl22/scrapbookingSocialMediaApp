@@ -16,7 +16,7 @@ interface MessageData {
 const FriendsListPage: React.FC = () => {
     const [userId, setUserId] = useState<string | null>(null);
     const [friendId, setFriendId] = useState<string>(''); 
-    const [initiateChat, setInitiateChat] = useState<boolean>(false);
+    const [initiateChat, setInitiateChat] = useState<boolean>(true);
     const [friends, setFriends] = useState<any[]>([]);
     const [friendRequests, setFriendRequests] = useState<IFriendRequestDetails[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -97,7 +97,8 @@ const FriendsListPage: React.FC = () => {
 
     const handleChat = (id: string) => {
         setFriendId(id);
-        setInitiateChat(true);  // Assume this user initiates the chat when clicking 'Chat'
+        setInitiateChat(true);
+        sendHello('hello');  // Assume this user initiates the chat when clicking 'Chat'
     };
 
     const handleCloseChat = () => {
@@ -112,6 +113,10 @@ const FriendsListPage: React.FC = () => {
             setMessages(prev => [...prev, `You: ${message}`]); // Appends the new message to the chat history
         }
     };
+
+    const sendHello = (message: "hello"): void => {
+        socket.emit('sendMessage', message);
+    }
     
     
     return (
@@ -156,7 +161,7 @@ const FriendsListPage: React.FC = () => {
                         {friends.map(friend => (
                             <div key={friend.id} className="friend-item">
                                 <span>{friend.username}</span>
-                                <button onClick={() => handleChat(friend.id)}>Chat</button>
+                                <button onClick={() => handleChat(friendId)}>Chat</button>
                                 <button onClick={handleCloseChat}>End Chat</button>
                                 <button onClick={() => handleDeleteFriend(friend.id)}>Delete</button>
                             </div>
