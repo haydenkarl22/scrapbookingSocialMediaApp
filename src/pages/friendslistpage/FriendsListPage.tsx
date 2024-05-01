@@ -16,7 +16,7 @@ interface MessageData {
 const FriendsListPage: React.FC = () => {
     const [userId, setUserId] = useState<string | null>(null);
     const [friendId, setFriendId] = useState<string>(''); 
-    const [initiateChat, setInitiateChat] = useState<boolean>(true);
+    const [initiateChat, setInitiateChat] = useState<boolean>(false);
     const [friends, setFriends] = useState<any[]>([]);
     const [friendRequests, setFriendRequests] = useState<IFriendRequestDetails[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
