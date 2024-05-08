@@ -10,7 +10,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const FriendsListPage: React.FC = () => {
     const [userId, setUserId] = useState<string | null>(null);
-    const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
+    const [selectedFriend, setSelectedFriend] = useState<{ id: string; username: string } | null>(null);
     const [friends, setFriends] = useState<any[]>([]);
     const [friendRequests, setFriendRequests] = useState<IFriendRequestDetails[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -110,12 +110,15 @@ const FriendsListPage: React.FC = () => {
     };
 
     const handleChat = async (friendId: string) => {
-        setSelectedFriend(friendId);
-        const messages = await fetchChatMessages(userId!, friendId);
-        setChatMessages(messages);
-    };
+        const friend = friends.find(friend => friend.id === friendId);
+        if (friend) {
+          setSelectedFriend({ id: friendId, username: friend.username });
+          const messages = await fetchChatMessages(userId!, friendId);
+          setChatMessages(messages);
+        }
+      };
 
-    const handleSendMessage = async (message: string, file?: File, scrapbookUrl?: string) => {
+      const handleSendMessage = async (message: string, file?: File, scrapbookUrl?: string) => {
         if (userId && selectedFriend) {
           let fileUrl = '';
           if (file) {
@@ -123,7 +126,7 @@ const FriendsListPage: React.FC = () => {
             await uploadBytes(storageRef, file);
             fileUrl = await getDownloadURL(storageRef);
           }
-          await sendChatMessage(userId, selectedFriend, message, fileUrl, scrapbookUrl || '');
+          await sendChatMessage(userId, selectedFriend.id, message, fileUrl, scrapbookUrl || '');
           setChatMessages((prev) => [...prev, { senderId: userId, message, fileUrl, scrapbookUrl }]);
         }
       };
@@ -175,11 +178,21 @@ const FriendsListPage: React.FC = () => {
                     </div>
                     {selectedFriend && (
                         <div>
-                            <h3>Chat with {selectedFriend}</h3>
+                            <h3>Chat with {selectedFriend.username}</h3>
                             {chatMessages.map((msg, index) => (
                                 <div key={index}>
-                                    <p>{msg.senderId === userId ? 'You' : 'Friend'}: {msg.message}</p>
-                                    {msg.fileUrl && <img src={msg.fileUrl} alt="Shared file" />}
+                                    <p>{msg.senderId === userId ? 'You' : selectedFriend.username}: {msg.message}</p>
+                                    {msg.fileUrl && (
+                                        <>
+                                            {msg.fileUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+                                                <video src={msg.fileUrl} controls />
+                                            ) : msg.fileUrl.match(/\.(mp3|wav|oga)$/i) ? (
+                                                <audio src={msg.fileUrl} controls />
+                                            ) : (
+                                                <img src={msg.fileUrl} alt="Shared file" />
+                                            )}
+                                        </>
+                                    )}
                                     {msg.scrapbookUrl && (
                                         <a href={msg.scrapbookUrl} target="_blank" rel="noopener noreferrer">
                                             View Scrapbook
@@ -208,9 +221,9 @@ const FriendsListPage: React.FC = () => {
                             <button
                                 onClick={() => {
                                     if (scrapbookUrl) {
-                                        handleSendMessage('', undefined, scrapbookUrl);  
+                                        handleSendMessage('', undefined, scrapbookUrl);
                                     }
-                                }}    
+                                }}
                                 disabled={!scrapbookUrl}
                             >
                                 Share Scrapbook
