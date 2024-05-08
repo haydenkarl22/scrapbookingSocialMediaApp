@@ -3,9 +3,8 @@ import { Socket } from 'socket.io-client';
 
 interface WebRTCManagerProps {
     signaling: Socket;
-    initiateChat: boolean;
-    userId: string;
-    remoteUserId: string;
+    initiateChat: boolean; // A prop to determine if this user should initiate the chat
+    userId: string; // User ID of the current user
 }
 
 interface SignalData {
@@ -15,7 +14,12 @@ interface SignalData {
     candidate?: RTCIceCandidateInit;
 }
 
-const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, userId, remoteUserId }) => {
+interface MessageData {
+    message: string;
+    from: string;
+}
+
+const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, userId }) => {
     const peerConnection = useRef<RTCPeerConnection | null>(null);
     const dataChannel = useRef<RTCDataChannel | null>(null);
     const [messages, setMessages] = useState<string[]>([]);
@@ -25,78 +29,116 @@ const WebRTCManager: React.FC<WebRTCManagerProps> = ({ signaling, initiateChat, 
         const prepareConnection = () => {
             if (!peerConnection.current) {
                 peerConnection.current = new RTCPeerConnection();
-            }
-
-            peerConnection.current.onicecandidate = event => {
-                if (event.candidate) {
-                    signaling.emit('signaling', { type: 'candidate', candidate: event.candidate.toJSON(), from: userId, to: remoteUserId });
+                console.log('Preparing new WebRTC connection.');
+                
+                peerConnection.current.onicecandidate = event => {
+                    if (event.candidate) {
+                        signaling.emit('candidate', { candidate: event.candidate.toJSON() });
+                        console.log('ICE candidate emitted:', event.candidate);
+                    }
+                };
+        
+                peerConnection.current.ondatachannel = event => {
+                    dataChannel.current = event.channel;
+                    setupDataChannelHandlers();
+                };
+        
+                if (initiateChat) {
+                    // DataChannel should be created by the chat initiator only
+                    dataChannel.current = peerConnection.current.createDataChannel("chatChannel");
+                    setupDataChannelHandlers();
                 }
-            };
-
-            peerConnection.current.ondatachannel = event => {
-                dataChannel.current = event.channel;
-                dataChannel.current.onmessage = event => {
-                    setMessages(prev => [...prev, event.data]);
-                };
-            };
+            }
         };
 
-        const createDataChannel = () => {
-            if (peerConnection.current && peerConnection.current.signalingState !== 'closed') {
-                dataChannel.current = peerConnection.current.createDataChannel("chatChannel");
+        const setupDataChannelHandlers = () => {
+            if (dataChannel.current) {
+                dataChannel.current.onopen = () => {
+                    console.log("DataChannel opened");
+                };
+                dataChannel.current.onclose = () => {
+                    console.log("DataChannel closed");
+                };
                 dataChannel.current.onmessage = event => {
                     setMessages(prev => [...prev, event.data]);
+                    console.log("Message received on DataChannel:", event.data);
                 };
             }
         };
+
+        // Set the user ID for this connection
+        signaling.emit('setUserId', userId);
+        console.log('Signaling setUserId:', userId);
 
         if (initiateChat) {
+            
             prepareConnection();
-            createDataChannel();
-            if (peerConnection.current && peerConnection.current.signalingState !== 'closed') {
+            if (peerConnection.current) {
                 peerConnection.current.createOffer().then(offer => {
-                    peerConnection.current?.setLocalDescription(offer);
-                    signaling.emit('signaling', { type: 'offer', offer, from: userId, to: remoteUserId });
+                    if (peerConnection.current && offer) {
+                        peerConnection.current.setLocalDescription(offer);
+                        signaling.emit('offer', { offer });
+                    }
                 });
             }
+            
         }
 
-        signaling.on('signaling', async (data: SignalData & { from: string, to: string }) => {
-            if (data.from === remoteUserId) {
-                switch (data.type) {
-                    case 'offer':
-                        if (!initiateChat && data.offer) {
-                            prepareConnection();
-                            await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(data.offer));
-                            const answer = await peerConnection.current?.createAnswer();
-                            await peerConnection.current?.setLocalDescription(answer);
-                            signaling.emit('signaling', { type: 'answer', answer, from: userId, to: remoteUserId });
-                        }
-                        break;
-                    case 'answer':
-                        if (data.answer) {
-                            await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(data.answer));
-                        }
-                        break;
-                    case 'candidate':
-                        if (data.candidate) {
-                            await peerConnection.current?.addIceCandidate(new RTCIceCandidate(data.candidate));
-                        }
-                        break;
+        signaling.on('offer', async (data: SignalData) => {
+            if (!initiateChat) {
+                
+                prepareConnection();
+                if (peerConnection.current && data.offer) {
+                    await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.offer));
+                    console.log('Remote description set with offer:', data.offer);
+
+                    const answer = await peerConnection.current.createAnswer();
+                    if (answer) {
+                        await peerConnection.current.setLocalDescription(answer);
+                        signaling.emit('answer', { answer });
+                        console.log('Answer created and emitted:', answer);
+                    }
                 }
             }
+        });
+
+        signaling.on('answer', async (data: SignalData) => {
+            if (peerConnection.current && data.answer) {
+                await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+                console.log('Remote description set with answer:', data.answer);
+            }
+        });
+
+        signaling.on('candidate', async (data: SignalData) => {
+            if (peerConnection.current && data.candidate) {
+                await peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+                console.log('ICE candidate added:', data.candidate);
+            }
+        });
+
+        // Listen for incoming messages
+        signaling.on('receiveMessage', (data: MessageData) => {
+            setMessages(prev => [...prev, `${data.from}: ${data.message}`]);
         });
 
         return () => {
             peerConnection.current?.close();
             dataChannel.current?.close();
+            signaling.off('offer');
+            signaling.off('answer');
+            signaling.off('candidate');
+            signaling.off('receiveMessage');
+            console.log('Cleaned up WebRTC connections.');
         };
-    }, [signaling, initiateChat, userId, remoteUserId]);
+    }, [signaling, initiateChat, userId]);
 
     const sendMessage = () => {
         if (dataChannel.current && dataChannel.current.readyState === "open") {
             dataChannel.current.send(inputMessage);
             setInputMessage('');
+            console.log('Message sent via DataChannel:', inputMessage);
+        } else {
+            console.log('DataChannel not open, cannot send message.');
         }
     };
 

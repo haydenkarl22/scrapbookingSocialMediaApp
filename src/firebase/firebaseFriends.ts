@@ -1,5 +1,5 @@
 import { db } from '../firebase/firebaseConfig'; // Assume your config file exports a configured Firestore instance
-import { doc, updateDoc, arrayUnion, arrayRemove, getDoc, getDocs, collection, query, where } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, arrayRemove, getDoc, getDocs, collection, query, where, addDoc, orderBy, serverTimestamp } from 'firebase/firestore';
 
 
 // TypeScript interface for type safety
@@ -118,6 +118,36 @@ export const acceptFriendRequest = async ({ userId, friendId }: IFriendOperation
     return friendSnapshot.data().username || "Unknown User";  // Return the username
   }
   return "Unknown User";  // Default case if user data is not found
+};
+
+export const sendChatMessage = async (
+  senderId: string,
+  receiverId: string,
+  message: string,
+  fileUrl: string,
+  scrapbookUrl: string
+): Promise<void> => {
+  const chatMessagesCollection = collection(db, 'chatMessages');
+  await addDoc(chatMessagesCollection, {
+    senderId,
+    receiverId,
+    message,
+    fileUrl,
+    scrapbookUrl,
+    timestamp: serverTimestamp(),
+  });
+};
+
+export const fetchChatMessages = async (userId: string, friendId: string): Promise<any[]> => {
+  const chatMessagesCollection = collection(db, 'chatMessages');
+  const q = query(
+    chatMessagesCollection,
+    where('senderId', 'in', [userId, friendId]),
+    where('receiverId', 'in', [userId, friendId]),
+    orderBy('timestamp')
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => doc.data());
 };
 
 

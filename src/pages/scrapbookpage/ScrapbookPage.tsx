@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { fabric } from 'fabric';
-import { getStorage, ref, uploadString } from 'firebase/storage';
+import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db, storage } from '../../firebase/firebaseConfig';
 import './scrapbookpage.css';
@@ -96,11 +96,14 @@ const ScrapbookPage: React.FC = () => {
   const handleSaveScrapbook = async () => {
     if (canvas && userId) {
       const dataURL = canvas.toDataURL();
+      const storage = getStorage();
       const scrapbookRef = ref(storage, `scrapbooks/${userId}.png`);
+
       try {
         await uploadString(scrapbookRef, dataURL, 'data_url');
+        const downloadURL = await getDownloadURL(scrapbookRef);
         const userDocRef = doc(db, 'users', userId);
-        await updateDoc(userDocRef, { scrapbookUrl: dataURL });
+        await updateDoc(userDocRef, { scrapbookUrl: downloadURL });
         alert('Scrapbook saved successfully!');
       } catch (error) {
         console.error('Error saving scrapbook:', error);
