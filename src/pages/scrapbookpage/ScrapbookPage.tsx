@@ -28,12 +28,6 @@ const ScrapbookPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!userId) {
-      navigate('/profile?mode=signin', { replace: true });
-    }
-  }, [userId, navigate]);
-
-  useEffect(() => {
     if (canvasRef.current) {
       const fabricCanvas = new fabric.Canvas(canvasRef.current, {
         width: 800,

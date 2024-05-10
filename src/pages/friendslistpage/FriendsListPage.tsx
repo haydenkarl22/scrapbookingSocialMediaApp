@@ -69,16 +69,6 @@ const FriendsListPage: React.FC = () => {
         }
     }, [userId, selectedFriend]);
 
-    useEffect(() => {
-        if (!userId) {
-            navigate('/profile?mode=signin', { replace: true });
-        }
-    }, [userId, navigate]);
-
-    if (!userId) {
-        return <div>Sign in to add or view friends.</div>;
-    }
-
     const handleSearch = async () => {
         if (searchTerm) {
             const results = await searchUsers(searchTerm);
@@ -159,6 +149,10 @@ const FriendsListPage: React.FC = () => {
         setChatMessages([]);
         setIsChatOpen(false);
       };
+
+      if (!userId) {
+        return <div>Sign in to make a scrapbook.</div>;
+      }
 
     return (
         <>
