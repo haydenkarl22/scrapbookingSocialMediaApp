@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { fabric } from 'fabric';
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -12,69 +12,68 @@ const ScrapbookPage: React.FC = () => {
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [text, setText] = useState('');
-  const navigate = useNavigate();
 
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         setUserId(user.uid);
+
+        // Initialize the canvas if the user is authenticated
+        if (canvasRef.current) {
+          const fabricCanvas = new fabric.Canvas(canvasRef.current, {
+            width: 800,
+            height: 600,
+          });
+
+          // Clear any existing objects from the canvas
+          fabricCanvas.clear();
+
+          fabricCanvas.on('object:selected', (event) => {
+            const selectedObject = event.target;
+            if (selectedObject) {
+              selectedObject.set({
+                borderColor: 'red',
+                cornerColor: 'red',
+                cornerSize: 10,
+                transparentCorners: false,
+              });
+              fabricCanvas.renderAll();
+            }
+          });
+
+          fabricCanvas.on('object:moving', (event) => {
+            fabricCanvas.renderAll();
+          });
+
+          fabricCanvas.on('object:rotating', (event) => {
+            fabricCanvas.renderAll();
+          });
+
+          // Add delete functionality
+          window.addEventListener('keydown', (event) => {
+            const activeObject = fabricCanvas.getActiveObject();
+            if (event.key === 'Delete' && activeObject) {
+              fabricCanvas.remove(activeObject);
+              fabricCanvas.renderAll();
+            }
+          });
+
+          setCanvas(fabricCanvas);
+
+          // Clean up the fabric instance and event listener when the component unmounts
+          return () => {
+            fabricCanvas.dispose();
+            window.removeEventListener('keydown', () => {});
+          };
+        }
       } else {
         setUserId(null);
+        setCanvas(null);
       }
     });
 
     return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (canvasRef.current) {
-      const fabricCanvas = new fabric.Canvas(canvasRef.current, {
-        width: 800,
-        height: 600,
-      });
-
-      // Clear any existing objects from the canvas
-      fabricCanvas.clear();
-
-      fabricCanvas.on('object:selected', (event) => {
-        const selectedObject = event.target;
-        if (selectedObject) {
-          selectedObject.set({
-            borderColor: 'red',
-            cornerColor: 'red',
-            cornerSize: 10,
-            transparentCorners: false,
-          });
-          fabricCanvas.renderAll();
-        }
-      });
-
-      fabricCanvas.on('object:moving', (event) => {
-        fabricCanvas.renderAll();
-      });
-
-      fabricCanvas.on('object:rotating', (event) => {
-        fabricCanvas.renderAll();
-      });
-
-      // Add delete functionality
-      window.addEventListener('keydown', (event) => {
-        const activeObject = fabricCanvas.getActiveObject();
-        if (event.key === 'Delete' && activeObject) {
-          fabricCanvas.remove(activeObject);
-          fabricCanvas.renderAll();
-        }
-      });
-
-      setCanvas(fabricCanvas);
-
-      // Clean up the fabric instance and event listener when the component unmounts
-      return () => {
-        fabricCanvas.dispose();
-        window.removeEventListener('keydown', () => {});
-      };
-    }
   }, []);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,7 +110,7 @@ const ScrapbookPage: React.FC = () => {
       const dataURL = canvas.toDataURL();
       const storage = getStorage();
       const scrapbookRef = ref(storage, `scrapbooks/${userId}.png`);
-  
+
       try {
         await uploadString(scrapbookRef, dataURL, 'data_url');
         const downloadURL = await getDownloadURL(scrapbookRef);
@@ -152,9 +151,7 @@ const ScrapbookPage: React.FC = () => {
     }
   };
 
-  if (!userId) {
-    return <div>Sign in to make a scrapbook.</div>;
-  }
+ 
 
   return (
     <>
@@ -166,8 +163,8 @@ const ScrapbookPage: React.FC = () => {
         <Link to="/" className="homebutton">
           Home
         </Link>
-        <Link to="/profile" className="profilebutton">
-          My Profile
+        <Link to="/profile?mode=signin" className="profilebutton">
+          Sign In
         </Link>
         <Link to="/scrapbook" className="scrapbookbutton">
           Scrapbook
