@@ -195,3 +195,7 @@ h2 {
 .outgoing-friend-request-item button:hover {
   color: rgb(231, 150, 185);
 }
+
+.noUserAuth {
+  font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+}

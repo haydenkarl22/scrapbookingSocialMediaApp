@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { fabric } from 'fabric';
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db, storage } from '../../firebase/firebaseConfig';
 import './scrapbookpage.css';
 import { getAuth } from 'firebase/auth';
@@ -12,6 +12,7 @@ const ScrapbookPage: React.FC = () => {
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [text, setText] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const auth = getAuth();
@@ -25,6 +26,12 @@ const ScrapbookPage: React.FC = () => {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!userId) {
+      navigate('/profile?mode=signin', { replace: true });
+    }
+  }, [userId, navigate]);
 
   useEffect(() => {
     if (canvasRef.current) {
@@ -93,7 +100,6 @@ const ScrapbookPage: React.FC = () => {
               hasControls: true,
               selectable: true,
               evented: true,
-              crossOrigin: 'anonymous', // Set crossOrigin for local images
             });
             img.scaleToWidth(200);
             canvas.add(img);
@@ -105,66 +111,22 @@ const ScrapbookPage: React.FC = () => {
       reader.readAsDataURL(file);
     }
   };
-  
 
   const handleSaveScrapbook = async () => {
     if (canvas && userId) {
-      const tempCanvas = fabric.util.createCanvasElement();
-      tempCanvas.width = canvas.getWidth();
-      tempCanvas.height = canvas.getHeight();
+      const dataURL = canvas.toDataURL();
+      const storage = getStorage();
+      const scrapbookRef = ref(storage, `scrapbooks/${userId}.png`);
   
-      const tempContext = tempCanvas.getContext('2d');
-      if (tempContext) {
-        canvas.getObjects().forEach((obj) => {
-          if (obj instanceof fabric.Image) {
-            const left = obj.left || 0;
-            const top = obj.top || 0;
-            obj.set('crossOrigin', 'anonymous'); // Set crossOrigin for loaded images
-            tempContext.drawImage(obj.getElement(), left, top, obj.getScaledWidth(), obj.getScaledHeight());
-          }
-        });
-  
-        const dataURL = tempCanvas.toDataURL();
-        const storage = getStorage();
-        const scrapbookRef = ref(storage, `scrapbooks/${userId}.png`);
-  
-        try {
-          await uploadString(scrapbookRef, dataURL, 'data_url');
-          const downloadURL = await getDownloadURL(scrapbookRef);
-          const userDocRef = doc(db, 'users', userId);
-          await updateDoc(userDocRef, { scrapbookUrl: downloadURL });
-          alert('Scrapbook saved successfully!');
-        } catch (error) {
-          console.error('Error saving scrapbook:', error);
-          alert('Failed to save scrapbook. Please try again.');
-        }
-      }
-    }
-  };
-
-  const handleLoadScrapbook = async () => {
-    if (userId && canvas) {
       try {
+        await uploadString(scrapbookRef, dataURL, 'data_url');
+        const downloadURL = await getDownloadURL(scrapbookRef);
         const userDocRef = doc(db, 'users', userId);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const scrapbookUrl = userDoc.data().scrapbookUrl;
-          if (scrapbookUrl) {
-            fabric.Image.fromURL(scrapbookUrl, (img) => {
-              canvas.clear();
-              img.set({
-                selectable: false,
-                evented: false,
-                crossOrigin: 'anonymous', // Set crossOrigin for external images
-              });
-              canvas.add(img);
-              canvas.renderAll();
-            });
-          }
-        }
+        await updateDoc(userDocRef, { scrapbookUrl: downloadURL });
+        alert('Scrapbook saved successfully!');
       } catch (error) {
-        console.error('Error loading scrapbook:', error);
-        alert('Failed to load scrapbook. Please try again.');
+        console.error('Error saving scrapbook:', error);
+        alert('Failed to save scrapbook. Please try again.');
       }
     }
   };
@@ -196,6 +158,10 @@ const ScrapbookPage: React.FC = () => {
     }
   };
 
+  if (!userId) {
+    return <div>Sign in to make a scrapbook.</div>;
+  }
+
   return (
     <>
       <header className="nohead">ScrapP@ges</header>
@@ -214,13 +180,12 @@ const ScrapbookPage: React.FC = () => {
         </Link>
       </div>
       <div className="scrapbook-container">
-        <div className="canvas-wrapper">
+        <div className="canvas-container">
           <canvas ref={canvasRef} className="canvas" width={800} height={600} />
         </div>
         <div className="button-container">
           <input type="file" onChange={handleImageUpload} accept="image/*" />
           <button onClick={handleSaveScrapbook}>Save Scrapbook</button>
-          <button onClick={handleLoadScrapbook}>Load Scrapbook</button>
           <button onClick={handleResetScrapbook}>Reset Scrapbook</button>
           <div className="input-text-container">
             <input

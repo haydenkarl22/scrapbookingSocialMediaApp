@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import "./friendslistpage.css";
-import WebRTCManager from '../../components/webRTCManager/WebRTCManager';
 import { IFriendRequestDetails, fetchChatMessages, deleteFriend, fetchFriends, searchUsers, sendFriendRequest, acceptFriendRequest, fetchFriendRequests, IFriendOperations, sendChatMessage, fetchOutgoingFriendRequests, cancelFriendRequest } from '../../firebase/firebaseFriends';
 import { observeAuthState, fetchUserProfile } from '../../firebase/authServices';
 import { onSnapshot, query, collection, where, orderBy } from 'firebase/firestore';
@@ -19,6 +18,7 @@ const FriendsListPage: React.FC = () => {
     const [scrapbookUrl, setScrapbookUrl] = useState<string | null>(null);
     const [outgoingFriendRequests, setOutgoingFriendRequests] = useState<IFriendRequestDetails[]>([]);
     const [isChatOpen, setIsChatOpen] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const unsubscribe = observeAuthState((uid) => {
@@ -46,6 +46,7 @@ const FriendsListPage: React.FC = () => {
             unsubscribe();
         };
     }, []);
+    
 
     useEffect(() => {
         if (selectedFriend) {
@@ -67,6 +68,16 @@ const FriendsListPage: React.FC = () => {
             };
         }
     }, [userId, selectedFriend]);
+
+    useEffect(() => {
+        if (!userId) {
+            navigate('/profile?mode=signin', { replace: true });
+        }
+    }, [userId, navigate]);
+
+    if (!userId) {
+        return <div>Sign in to add or view friends.</div>;
+    }
 
     const handleSearch = async () => {
         if (searchTerm) {
