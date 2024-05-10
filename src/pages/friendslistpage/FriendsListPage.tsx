@@ -151,7 +151,7 @@ const FriendsListPage: React.FC = () => {
       };
 
       if (!userId) {
-        return <div>Sign in to make a scrapbook.</div>;
+        return <div>Sign in to add or search for friends.</div>;
       }
 
     return (

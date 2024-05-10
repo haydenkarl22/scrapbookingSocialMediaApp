@@ -164,7 +164,7 @@ const ScrapbookPage: React.FC = () => {
           Home
         </Link>
         <Link to="/profile?mode=signin" className="profilebutton">
-          Sign In
+          My Profile
         </Link>
         <Link to="/scrapbook" className="scrapbookbutton">
           Scrapbook
