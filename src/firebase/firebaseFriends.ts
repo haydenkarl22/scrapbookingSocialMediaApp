@@ -71,10 +71,16 @@ export const addFriend = async ({ userId, friendId }: IFriendOperations): Promis
 // Function to delete a friend
 export const deleteFriend = async ({ userId, friendId }: IFriendOperations): Promise<void> => {
   const userDoc = doc(db, 'users', userId);
+  const friendDoc = doc(db, 'users', friendId);
+
   await updateDoc(userDoc, {
     friends: arrayRemove(friendId)
   });
-}
+
+  await updateDoc(friendDoc, {
+    friends: arrayRemove(userId)
+  });
+};
 
 export const sendFriendRequest = async ({ userId, friendId }: IFriendOperations): Promise<void> => {
   const userDocRef = doc(db, 'users', userId);
@@ -82,7 +88,6 @@ export const sendFriendRequest = async ({ userId, friendId }: IFriendOperations)
 
   const [userDoc, friendDoc] = await Promise.all([getDoc(userDocRef), getDoc(friendDocRef)]);
 
-  // Check if already friends or request pending
   if (userDoc.exists() && friendDoc.exists()) {
     const userFriends = userDoc.data().friends || [];
     const friendRequests = friendDoc.data().friendRequests || [];
@@ -93,31 +98,34 @@ export const sendFriendRequest = async ({ userId, friendId }: IFriendOperations)
     }
   }
 
-  // Update the friend's document with a new friend request
   await updateDoc(friendDocRef, {
     friendRequests: arrayUnion(userId)
   });
+
+  await updateDoc(userDocRef, {
+    outgoingFriendRequests: arrayUnion(friendId)
+  });
 };
 
-export const acceptFriendRequest = async ({ userId, friendId }: IFriendOperations): Promise<string> => {  // Now returns username
+export const acceptFriendRequest = async ({ userId, friendId }: IFriendOperations): Promise<{ id: string; username: string }> => {
   const userDoc = doc(db, 'users', userId);
   const friendDoc = doc(db, 'users', friendId);
 
   await updateDoc(userDoc, {
     friends: arrayUnion(friendId),
-    friendRequests: arrayRemove(friendId)  // Remove from friendRequests
+    friendRequests: arrayRemove(friendId)
   });
 
   await updateDoc(friendDoc, {
-    friends: arrayUnion(userId)  // Add to friends
+    friends: arrayUnion(userId),
+    outgoingFriendRequests: arrayRemove(userId) // Remove the outgoing friend request
   });
 
-  // Fetch the username of the newly added friend
   const friendSnapshot = await getDoc(friendDoc);
   if (friendSnapshot.exists()) {
-    return friendSnapshot.data().username || "Unknown User";  // Return the username
+    return { id: friendId, username: friendSnapshot.data().username || "Unknown User" };
   }
-  return "Unknown User";  // Default case if user data is not found
+  return { id: friendId, username: "Unknown User" };
 };
 
 export const sendChatMessage = async (
@@ -148,6 +156,35 @@ export const fetchChatMessages = async (userId: string, friendId: string): Promi
   );
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => doc.data());
+};
+
+export const fetchOutgoingFriendRequests = async (userId: string): Promise<IFriendRequestDetails[]> => {
+  const userDocRef = doc(db, 'users', userId);
+  const userDoc = await getDoc(userDocRef);
+  const requests = [];
+  if (userDoc.exists() && userDoc.data().outgoingFriendRequests) {
+    for (const friendId of userDoc.data().outgoingFriendRequests) {
+      const friendDocRef = doc(db, 'users', friendId);
+      const friendDoc = await getDoc(friendDocRef);
+      if (friendDoc.exists()) {
+        requests.push({ id: friendId, username: friendDoc.data().username || "Unknown User" });
+      }
+    }
+  }
+  return requests;
+};
+
+export const cancelFriendRequest = async ({ userId, friendId }: IFriendOperations): Promise<void> => {
+  const userDoc = doc(db, 'users', userId);
+  const friendDoc = doc(db, 'users', friendId);
+
+  await updateDoc(userDoc, {
+    outgoingFriendRequests: arrayRemove(friendId)
+  });
+
+  await updateDoc(friendDoc, {
+    friendRequests: arrayRemove(userId)
+  });
 };
 
 

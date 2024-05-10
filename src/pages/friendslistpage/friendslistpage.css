@@ -1,108 +1,197 @@
 .buttonbar {
-    display: flex;
-    justify-content: space-evenly;
-    align-items: center;
-    height: 50px;
-    background-color: black;
-    width: 100%;
-  }
-  
-  .friendsbutton,
-  .homebutton,
-  .profilebutton,
-  .scrapbookbutton {
-    font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
-    font-weight: bolder;
-    width: 25%;
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 10px 20px;
-    font-size: 200%;
-    color: rgb(182, 182, 182);
-    text-decoration: none;
-  }
-  
-  .subDiv {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    padding: 20px 0;
-  }
-  
-  .sub {
-    width: 90%;
-    margin: 0 auto;
-    font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
-    text-align: center;
-  }
-  
-  h2 {
-    margin-top: 20px;
-  }
-  
-  .user-item,
-  .friend-request-item,
-  .friend-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 10px;
-    margin-top: 10px;
-    background-color: #f0f0f0;
-    border-radius: 5px;
-  }
-  
-  .user-item button,
-  .friend-request-item button,
-  .friend-item button {
-    background-color: black;
-    color: rgb(182, 182, 182);
-    padding: 5px 10px;
-    font-size: 90%;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 5px;
-  }
-  
-  .user-item button:hover,
-  .friend-request-item button:hover,
-  .friend-item button:hover {
-    color: rgb(231, 150, 185);
-  }
-  
-  .input-text-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 20px;
-  }
-  
-  .input-text-container input[type="text"] {
-    flex-grow: 1;
-    margin-right: 5px;
-    padding: 5px 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  height: 50px;
+  background-color: black;
+  width: 100%;
+}
 
-  .profile-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-  
-  .profile-container input[type="text"],
-  .profile-container input[type="email"],
-  .profile-container input[type="password"] {
-    width: 200px;
-    height: 30px;
-    padding: 5px;
-    font-size: 14px;
-    box-sizing: border-box;
-    margin-bottom: 10px;
-  }
+.friendsbutton,
+.homebutton,
+.profilebutton,
+.scrapbookbutton {
+  font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+  font-weight: bolder;
+  width: 25%;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 10px 20px;
+  font-size: 200%;
+  color: rgb(182, 182, 182);
+  text-decoration: none;
+}
+
+.subDiv {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 20px 0;
+}
+
+.search-users {
+  margin-bottom: 20px;
+}
+
+.search-users input {
+  font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+  width: 300px;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.search-users button {
+  padding: 10px 20px;
+  font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+  font-size: 16px;
+  background-color: black;
+  color: rgb(182, 182, 182);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+h2 {
+  margin-top: 20px;
+}
+
+.user-item,
+.friend-request-item,
+.friend-item,
+.outgoing-friend-request-item {
+  font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  margin-top: 10px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.user-item button,
+.friend-request-item button,
+.friend-item button {
+  font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+  background-color: black;
+  color: rgb(182, 182, 182);
+  padding: 5px 10px;
+  font-size: 90%;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 5px;
+}
+
+.user-item button:hover,
+.friend-request-item button:hover,
+.friend-item button:hover {
+  color: rgb(231, 150, 185);
+}
+
+.input-text-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.input-text-container input[type="text"] {
+  flex-grow: 1;
+  margin-right: 5px;
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.profile-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.profile-container input[type="text"],
+.profile-container input[type="email"],
+.profile-container input[type="password"] {
+  width: 200px;
+  height: 30px;
+  padding: 5px;
+  font-size: 14px;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+}
+
+.chat-messages-container {
+  background-color: #333;
+  color: #fff;
+  padding: 20px;
+  overflow-y: auto;
+  max-height: 1000px;
+}
+
+.chat-messages-container p {
+  text-shadow: 0 0 1px #fff;
+  font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+}
+
+.chat-messages-container a:link {
+  color: #b0e0e6;
+}
+
+.chat-messages-container a:visited {
+  color: #ffb6c1;
+}
+
+.search-results,
+.friend-requests,
+.friends {
+  margin-bottom: 20px;
+}
+
+.search-results h2,
+.friend-requests h2,
+.friends h2 {
+  margin-bottom: 10px;
+}
+
+.outgoing-friend-requests {
+  margin-bottom: 20px;
+}
+
+.outgoing-friend-requests h2 {
+  margin-bottom: 10px;
+}
+
+.outgoing-friend-request-item {
+  display: flex;
+  align-items: center;
+  font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+  padding: 10px;
+  margin-top: 10px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.outgoing-friend-request-item button {
+  font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
+  background-color: black;
+  color: rgb(182, 182, 182);
+  padding: 5px 10px;
+  font-size: 90%;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.outgoing-friend-request-item button:hover {
+  color: rgb(231, 150, 185);
+}

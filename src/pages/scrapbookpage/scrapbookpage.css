@@ -27,27 +27,22 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 20px;
   height: calc(100vh - 70px);
   overflow: hidden;
 }
 
-.canvas-container {
-  border: 1px solid #000;
+.canvas-wrapper {
+  flex-grow: 1;
   width: 100%;
   max-width: 800px;
-  max-height: calc(100% - 100px);
-  overflow-y: auto;
-  position: relative;
-  z-index: 10;
-  background-color: white;
-  box-sizing: border-box;
-  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.canvas-container canvas {
-  width: 100%;
-  height: 100%;
+.canvas {
+  border: 5px solid #000;
+  box-sizing: border-box;
 }
 
 .button-container {
@@ -81,6 +76,7 @@
 }
 
 .input-text-container input[type="text"] {
+  font-family: 'Franklin Gothic Medium', 'Courier New', Courier, monospace, serif, sans-serif;
   flex-grow: 1;
   margin-right: 5px;
   background-color: white;

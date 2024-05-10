@@ -28,11 +28,14 @@ const ScrapbookPage: React.FC = () => {
 
   useEffect(() => {
     if (canvasRef.current) {
-      const fabricCanvas = new fabric.Canvas(canvasRef.current);
-  
+      const fabricCanvas = new fabric.Canvas(canvasRef.current, {
+        width: 800,
+        height: 600,
+      });
+
       // Clear any existing objects from the canvas
       fabricCanvas.clear();
-  
+
       fabricCanvas.on('object:selected', (event) => {
         const selectedObject = event.target;
         if (selectedObject) {
@@ -45,27 +48,36 @@ const ScrapbookPage: React.FC = () => {
           fabricCanvas.renderAll();
         }
       });
-  
+
       fabricCanvas.on('object:moving', (event) => {
         fabricCanvas.renderAll();
       });
-  
+
       fabricCanvas.on('object:rotating', (event) => {
         fabricCanvas.renderAll();
       });
-  
+
+      // Add delete functionality
+      window.addEventListener('keydown', (event) => {
+        const activeObject = fabricCanvas.getActiveObject();
+        if (event.key === 'Delete' && activeObject) {
+          fabricCanvas.remove(activeObject);
+          fabricCanvas.renderAll();
+        }
+      });
+
       setCanvas(fabricCanvas);
-  
-      // Clean up the fabric instance when the component unmounts
+
+      // Clean up the fabric instance and event listener when the component unmounts
       return () => {
         fabricCanvas.dispose();
+        window.removeEventListener('keydown', () => {});
       };
     }
   }, []);
-  
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
+    if (event.target.files && event.target.files[0] && canvas) {
       const file = event.target.files[0];
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -79,41 +91,59 @@ const ScrapbookPage: React.FC = () => {
               cornerSize: 10,
               hasRotatingPoint: true,
               hasControls: true,
-              selectable: true, // Add this line
+              selectable: true,
               evented: true,
+              crossOrigin: 'anonymous', // Set crossOrigin for local images
             });
             img.scaleToWidth(200);
-            canvas?.add(img);
-            canvas?.setActiveObject(img);
-            canvas?.renderAll();
+            canvas.add(img);
+            canvas.setActiveObject(img);
+            canvas.renderAll();
           });
         }
       };
       reader.readAsDataURL(file);
     }
   };
+  
 
   const handleSaveScrapbook = async () => {
     if (canvas && userId) {
-      const dataURL = canvas.toDataURL();
-      const storage = getStorage();
-      const scrapbookRef = ref(storage, `scrapbooks/${userId}.png`);
-
-      try {
-        await uploadString(scrapbookRef, dataURL, 'data_url');
-        const downloadURL = await getDownloadURL(scrapbookRef);
-        const userDocRef = doc(db, 'users', userId);
-        await updateDoc(userDocRef, { scrapbookUrl: downloadURL });
-        alert('Scrapbook saved successfully!');
-      } catch (error) {
-        console.error('Error saving scrapbook:', error);
-        alert('Failed to save scrapbook. Please try again.');
+      const tempCanvas = fabric.util.createCanvasElement();
+      tempCanvas.width = canvas.getWidth();
+      tempCanvas.height = canvas.getHeight();
+  
+      const tempContext = tempCanvas.getContext('2d');
+      if (tempContext) {
+        canvas.getObjects().forEach((obj) => {
+          if (obj instanceof fabric.Image) {
+            const left = obj.left || 0;
+            const top = obj.top || 0;
+            obj.set('crossOrigin', 'anonymous'); // Set crossOrigin for loaded images
+            tempContext.drawImage(obj.getElement(), left, top, obj.getScaledWidth(), obj.getScaledHeight());
+          }
+        });
+  
+        const dataURL = tempCanvas.toDataURL();
+        const storage = getStorage();
+        const scrapbookRef = ref(storage, `scrapbooks/${userId}.png`);
+  
+        try {
+          await uploadString(scrapbookRef, dataURL, 'data_url');
+          const downloadURL = await getDownloadURL(scrapbookRef);
+          const userDocRef = doc(db, 'users', userId);
+          await updateDoc(userDocRef, { scrapbookUrl: downloadURL });
+          alert('Scrapbook saved successfully!');
+        } catch (error) {
+          console.error('Error saving scrapbook:', error);
+          alert('Failed to save scrapbook. Please try again.');
+        }
       }
     }
   };
 
   const handleLoadScrapbook = async () => {
-    if (userId) {
+    if (userId && canvas) {
       try {
         const userDocRef = doc(db, 'users', userId);
         const userDoc = await getDoc(userDocRef);
@@ -121,9 +151,14 @@ const ScrapbookPage: React.FC = () => {
           const scrapbookUrl = userDoc.data().scrapbookUrl;
           if (scrapbookUrl) {
             fabric.Image.fromURL(scrapbookUrl, (img) => {
-              canvas?.clear();
-              canvas?.add(img);
-              canvas?.renderAll();
+              canvas.clear();
+              img.set({
+                selectable: false,
+                evented: false,
+                crossOrigin: 'anonymous', // Set crossOrigin for external images
+              });
+              canvas.add(img);
+              canvas.renderAll();
             });
           }
         }
@@ -154,7 +189,7 @@ const ScrapbookPage: React.FC = () => {
   };
 
   const handleResetScrapbook = () => {
-    if (window.confirm("Are you sure you want to reset your scrapbook? This action cannot be undone.")) {
+    if (window.confirm('Are you sure you want to reset your scrapbook? This action cannot be undone.')) {
       canvas?.clear();
       canvas?.renderAll();
       alert('Scrapbook has been reset.');
@@ -179,8 +214,8 @@ const ScrapbookPage: React.FC = () => {
         </Link>
       </div>
       <div className="scrapbook-container">
-        <div className="canvas-container">
-          <canvas ref={canvasRef} width={800} height={600} />
+        <div className="canvas-wrapper">
+          <canvas ref={canvasRef} className="canvas" width={800} height={600} />
         </div>
         <div className="button-container">
           <input type="file" onChange={handleImageUpload} accept="image/*" />
@@ -197,7 +232,6 @@ const ScrapbookPage: React.FC = () => {
             <button onClick={handleAddText}>Add Text</button>
           </div>
         </div>
-
       </div>
     </>
   );

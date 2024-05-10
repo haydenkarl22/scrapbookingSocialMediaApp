@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import "./friendslistpage.css";
 import WebRTCManager from '../../components/webRTCManager/WebRTCManager';
-import { IFriendRequestDetails, fetchChatMessages, deleteFriend, fetchFriends, searchUsers, sendFriendRequest, acceptFriendRequest, fetchFriendRequests, IFriendOperations, sendChatMessage } from '../../firebase/firebaseFriends';
+import { IFriendRequestDetails, fetchChatMessages, deleteFriend, fetchFriends, searchUsers, sendFriendRequest, acceptFriendRequest, fetchFriendRequests, IFriendOperations, sendChatMessage, fetchOutgoingFriendRequests, cancelFriendRequest } from '../../firebase/firebaseFriends';
 import { observeAuthState, fetchUserProfile } from '../../firebase/authServices';
 import { onSnapshot, query, collection, where, orderBy } from 'firebase/firestore';
 import { db, storage } from '../../firebase/firebaseConfig';
@@ -17,6 +17,8 @@ const FriendsListPage: React.FC = () => {
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [chatMessages, setChatMessages] = useState<any[]>([]);
     const [scrapbookUrl, setScrapbookUrl] = useState<string | null>(null);
+    const [outgoingFriendRequests, setOutgoingFriendRequests] = useState<IFriendRequestDetails[]>([]);
+    const [isChatOpen, setIsChatOpen] = useState(false);
 
     useEffect(() => {
         const unsubscribe = observeAuthState((uid) => {
@@ -24,6 +26,7 @@ const FriendsListPage: React.FC = () => {
               setUserId(uid);
               fetchFriends(uid).then(setFriends);
               fetchFriendRequests(uid).then(setFriendRequests);
+              fetchOutgoingFriendRequests(uid).then(setOutgoingFriendRequests);
               fetchUserProfile(uid).then((userProfile) => {
                 if (userProfile && userProfile.scrapbookUrl) {
                   setScrapbookUrl(userProfile.scrapbookUrl);
@@ -49,8 +52,8 @@ const FriendsListPage: React.FC = () => {
             const unsubscribe = onSnapshot(
                 query(
                     collection(db, 'chatMessages'),
-                    where('senderId', 'in', [userId, selectedFriend]),
-                    where('receiverId', 'in', [userId, selectedFriend]),
+                    where('senderId', 'in', [userId, selectedFriend.id]),
+                    where('receiverId', 'in', [userId, selectedFriend.id]),
                     orderBy('timestamp')
                 ),
                 (snapshot) => {
@@ -72,33 +75,34 @@ const FriendsListPage: React.FC = () => {
         }
     };
 
-    const handleAddFriend = (id: string): void => {
+    const handleAddFriend = async (id: string): Promise<void> => {
         if (userId && id) {
-            const isAlreadyFriend = friends.some(friend => friend.id === id);
-            if (isAlreadyFriend) {
-                alert("You are already friends!");
-                return;
-            }
-
-            const hasPendingRequest = friendRequests.some(request => request.id === id);
-            if (hasPendingRequest) {
-                alert("Friend request already sent!");
-                return;
-            }
-
-            const operationDetails: IFriendOperations = { userId: userId, friendId: id };
-            sendFriendRequest(operationDetails);
-            alert("Friend request sent!");
+          const isAlreadyFriend = friends.some(friend => friend.id === id);
+          if (isAlreadyFriend) {
+            alert("You are already friends!");
+            return;
+          }
+      
+          const hasPendingRequest = friendRequests.some(request => request.id === id);
+          if (hasPendingRequest) {
+            alert("Friend request already sent!");
+            return;
+          }
+      
+          const operationDetails: IFriendOperations = { userId: userId, friendId: id };
+          await sendFriendRequest(operationDetails);
+          setOutgoingFriendRequests(prev => [...prev, { id, username: searchResults.find(user => user.id === id)?.username || "Unknown User" }]);
+          alert("Friend request sent!");
         }
-    };
+      };
 
     const handleAcceptFriendRequest = async (id: string): Promise<void> => {
         if (userId && id) {
-            const username = await acceptFriendRequest({ userId, friendId: id });
-            setFriendRequests(prev => prev.filter(req => req.id !== id));
-            setFriends(prev => [...prev, username]);
+          const friendData = await acceptFriendRequest({ userId, friendId: id });
+          setFriendRequests(prev => prev.filter(req => req.id !== id));
+          setFriends(prev => [...prev, friendData]);
         }
-    };
+      };
 
     const handleDeleteFriend = async (id: string): Promise<void> => {
         if (userId && id) {
@@ -115,6 +119,7 @@ const FriendsListPage: React.FC = () => {
           setSelectedFriend({ id: friendId, username: friend.username });
           const messages = await fetchChatMessages(userId!, friendId);
           setChatMessages(messages);
+          setIsChatOpen(true);
         }
       };
 
@@ -131,6 +136,19 @@ const FriendsListPage: React.FC = () => {
         }
       };
 
+      const handleCancelFriendRequest = async (friendId: string): Promise<void> => {
+        if (userId) {
+          await cancelFriendRequest({ userId, friendId });
+          setOutgoingFriendRequests(prev => prev.filter(req => req.id !== friendId));
+        }
+      };
+
+      const handleCloseChat = () => {
+        setSelectedFriend(null);
+        setChatMessages([]);
+        setIsChatOpen(false);
+      };
+
     return (
         <>
             <header className='nohead'>ScrapP@ges</header>
@@ -141,12 +159,12 @@ const FriendsListPage: React.FC = () => {
                 <Link to="/scrapbook" className='scrapbookbutton'>Scrapbook</Link>
             </div>
             <div className='subDiv'>
-                <div className='sub'>
+                <div className='search-users'>
                     <input
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search users..."
+                        placeholder="Search friends..."
                     />
                     <button onClick={handleSearch}>Search</button>
                     <div>
@@ -154,6 +172,15 @@ const FriendsListPage: React.FC = () => {
                         {searchResults.map(user => (
                             <div key={user.id}>
                                 {user.username} <button onClick={() => handleAddFriend(user.id)}>Add Friend</button>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="outgoing-friend-requests">
+                        <h2>Outgoing Friend Requests:</h2>
+                        {outgoingFriendRequests.map(request => (
+                            <div key={request.id} className="outgoing-friend-request-item">
+                                {request.username}
+                                <button onClick={() => handleCancelFriendRequest(request.id)}>Cancel</button>
                             </div>
                         ))}
                     </div>
@@ -167,7 +194,7 @@ const FriendsListPage: React.FC = () => {
                         ))}
                     </div>
                     <div>
-                        <h2>Friends</h2>
+                        <h2>Friends:</h2>
                         {friends.map(friend => (
                             <div key={friend.id}>
                                 {friend.username}
@@ -176,58 +203,57 @@ const FriendsListPage: React.FC = () => {
                             </div>
                         ))}
                     </div>
-                    {selectedFriend && (
+                    {isChatOpen && selectedFriend && (
                         <div>
                             <h3>Chat with {selectedFriend.username}</h3>
-                            {chatMessages.map((msg, index) => (
-                                <div key={index}>
-                                    <p>{msg.senderId === userId ? 'You' : selectedFriend.username}: {msg.message}</p>
-                                    {msg.fileUrl && (
-                                        <>
-                                            {msg.fileUrl.match(/\.(mp4|webm|ogg)$/i) ? (
-                                                <video src={msg.fileUrl} controls />
-                                            ) : msg.fileUrl.match(/\.(mp3|wav|oga)$/i) ? (
-                                                <audio src={msg.fileUrl} controls />
-                                            ) : (
-                                                <img src={msg.fileUrl} alt="Shared file" />
+                                <div className='chat-messages-container'>
+                                    {chatMessages.map((msg, index) => (
+                                        <div key={index}>
+                                            <p>{msg.senderId === userId ? 'You' : selectedFriend.username}: {msg.message}</p>
+                                            {msg.fileUrl && (
+                                                <div>
+                                                    <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer">
+                                                        Download Shared File
+                                                    </a>
+                                                </div>
                                             )}
-                                        </>
-                                    )}
-                                    {msg.scrapbookUrl && (
-                                        <a href={msg.scrapbookUrl} target="_blank" rel="noopener noreferrer">
-                                            View Scrapbook
-                                        </a>
-                                    )}
-                                </div>
-                            ))}
-                            <input
-                                type="text"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && e.currentTarget.value) {
-                                        handleSendMessage(e.currentTarget.value);
-                                        e.currentTarget.value = '';
-                                    }
-                                }}
-                                placeholder="Type a message..."
-                            />
-                            <input
-                                type="file"
-                                onChange={(e) => {
-                                    if (e.target.files && e.target.files[0]) {
-                                        handleSendMessage('', e.target.files[0]);
-                                    }
-                                }}
-                            />
-                            <button
-                                onClick={() => {
-                                    if (scrapbookUrl) {
-                                        handleSendMessage('', undefined, scrapbookUrl);
-                                    }
-                                }}
-                                disabled={!scrapbookUrl}
-                            >
-                                Share Scrapbook
-                            </button>
+                                            {msg.scrapbookUrl && (
+                                                <a href={msg.scrapbookUrl} target="_blank" rel="noopener noreferrer">
+                                                    View Scrapbook
+                                                </a>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>    
+                                <input
+                                    type="text"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && e.currentTarget.value) {
+                                            handleSendMessage(e.currentTarget.value);
+                                            e.currentTarget.value = '';
+                                        }
+                                    }}
+                                        placeholder="Type a message..."
+                                />
+                                <input
+                                    type="file"
+                                    onChange={(e) => {
+                                        if (e.target.files && e.target.files[0]) {
+                                            handleSendMessage('', e.target.files[0]);
+                                        }
+                                    }}
+                                />
+                                <button
+                                    onClick={() => {
+                                        if (scrapbookUrl) {
+                                            handleSendMessage('', undefined, scrapbookUrl);
+                                        }
+                                    }}
+                                    disabled={!scrapbookUrl}
+                                >
+                                    Share Scrapbook
+                                </button>
+                                <button onClick={handleCloseChat}>End Chat</button>
                         </div>
                     )}
                 </div>

@@ -24,6 +24,7 @@ const ProfilePage: React.FC = () => {
     const [userProfile, setUserProfile] = useState<any>(null);
     const [bio, setBio] = useState('');
     const [editBio, setEditBio] = useState(false);
+    const [isChatOpen, setIsChatOpen] = useState(false);
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(async user => {
